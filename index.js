@@ -198,7 +198,7 @@ function setBouding() {
 init({
   id: "container",
   width: "300px",
-  height: "1000px",
+  height: "600px",
   padding: 20, 
   gap: 12,
   onDragStart:(cardIndex) => {

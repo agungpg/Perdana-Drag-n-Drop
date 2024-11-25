@@ -1,0 +1,46 @@
+.pg-board-container {
+  position: relative;
+  background-color: #fff;
+  border-radius :8px;
+  user-select: none; /* Prevent text selection */
+  -webkit-user-select: none; /* For Safari */
+  -ms-user-select: none; /* For older versions of IE */
+  display: flex;
+}
+.pg-board {
+  position: relative;
+  background-color: #D3D3D3;
+  border-radius :8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pg-board > .pg-card {
+  border-radius: 4px;
+  padding: 8px;
+  background-color: #fff;
+  width: calc(100% - 64px);
+  height: 90px;
+  cursor: pointer;
+  position: absolute;
+  transition: all 0.1s linear;
+  z-index: 9;
+
+}
+.pg-board > .pg-card.pg-card-active {
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+  z-index: 99;
+  transform: scale(1.05);
+}
+.pg-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+}
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}

@@ -160,37 +160,32 @@ function initFunc() {
 
         // drop card in the same board
         if(endBoardIndex == startBoardIndex) {
-          DropCardInTheSameBoard()
-          return;
-        }
-
-        if(endBoardIndex != startBoardIndex) {
-          
+          dropCardInTheSameBoard(endBoardIndex, endCardIndex, height)
+        } else if(endBoardIndex != startBoardIndex) {
           // move card with animation
           moveCardToAnotherBoard(endBoardIndex, endCardIndex, height)
           // end move card with animation
-
-          // restructure data
-          const dataMove = MULTIPLEDATA[startBoardIndex].data.splice(startCardIndex, 1)
-          const cardElMove = boardCards[startBoardIndex].cards.splice(startCardIndex, 1)
-          MULTIPLEDATA[endBoardIndex].data.splice(endCardIndex+1, 0, dataMove[0]);
-          boardCards[endBoardIndex].cards.splice(endCardIndex+1, 0, cardElMove[0]);
-          // end restructure data
-
-          //relayout element
-          setTimeout(() => {
-            boardCards.forEach((b, index) => {
-              boardCards[index]['rect'] = [];
-              boardCards[index]['cardsRect'] = [];
-            })
-            document.querySelectorAll(".pg-board").forEach(e => e.remove())
-            createBoards(MULTIPLEDATA)
-            setBoundingRect()
-            initFunc()
-          }, 100)
-          //end relayout element
         }
+        
+        // restructure data
+        const dataMove = MULTIPLEDATA[startBoardIndex].data.splice(startCardIndex, 1)
+        const cardElMove = boardCards[startBoardIndex].cards.splice(startCardIndex, 1)
+        MULTIPLEDATA[endBoardIndex].data.splice(endCardIndex+1, 0, dataMove[0]);
+        boardCards[endBoardIndex].cards.splice(endCardIndex+1, 0, cardElMove[0]);
+        // end restructure data
 
+        //relayout element
+        setTimeout(() => {
+          boardCards.forEach((b, index) => {
+            boardCards[index]['rect'] = [];
+            boardCards[index]['cardsRect'] = [];
+          })
+          document.querySelectorAll(".pg-board").forEach(e => e.remove())
+          createBoards(MULTIPLEDATA)
+          setBoundingRect()
+          initFunc()
+        }, 100)
+        //end relayout element
         onDragEndFn(startCardIndex, startBoardIndex, endCardIndex+1, endBoardIndex, MULTIPLEDATA)
         resetActiveVariable()
     }
@@ -240,11 +235,34 @@ function findEndIndex({x, y, width}){
   }
 }
 
-function DropCardInTheSameBoard(){
+function dropCardInTheSameBoard(endBoardIndex, endCardIndex, height){
+  const cardsLength = boardCards[endBoardIndex].cards.length
   cardActive.style.top = `${boardCards[startBoardIndex].cardsRect[startCardIndex].y-boarderStyles.gap/2}px`
   cardActive.style.left = `${boardCards[startBoardIndex].cardsRect[startCardIndex].x-boardCards[0].rect.x}px`
-  
-  resetActiveVariable()
+  if(endCardIndex+1 == startCardIndex) return;
+  //get direction
+  if(endCardIndex+1 > startCardIndex) {
+    for (let index = startCardIndex+1; index <= endCardIndex; index++) {
+      const cardRect = boardCards[endBoardIndex].cardsRect[index-1];
+      const card = boardCards[endBoardIndex].cards[index];
+
+      document.getElementById(card.id).style.top = `${cardRect.top-boarderStyles.gap/2}px`
+      if(index == endCardIndex){
+        document.getElementById(cardActive.id).style.top = `${boardCards[endBoardIndex].cardsRect[index].top-boarderStyles.gap/2}px`
+      }
+    }
+  } else if(endCardIndex+1 < startCardIndex) {
+    for (let index = cardsLength-2; index > endCardIndex; index--) {
+      const cardRect = boardCards[endBoardIndex].cardsRect[index];
+      const card = boardCards[endBoardIndex].cards[index];
+
+      document.getElementById(card.id).style.top = `${cardRect.top+height+boarderStyles.gap/2}px`
+      if(index == endCardIndex+1){
+        document.getElementById(cardActive.id).style.top = `${boardCards[endBoardIndex].cardsRect[index-1].top+height+boarderStyles.gap/2}px`
+      }
+    }
+
+  }
 }
 
 function resetActiveVariable(){
@@ -310,8 +328,7 @@ init({
   gap: 12,
   boardGap: 20,
   onDragStart:(boardIndex, cardIndex) => {
-    console.log("onDragStart")
-    console.log({boardIndex, cardIndex})
+    console.log("onDragStart: ", {boardIndex, cardIndex})
   },
   onDragEnd:(startCardIndex, startBoardIndex, endCardIndex, endBoardIndex, data) => {
     console.log("onDragStart: ", {startCardIndex, startBoardIndex, endCardIndex, endBoardIndex, data})

@@ -164,26 +164,10 @@ function initFunc() {
           return;
         }
 
-
         if(endBoardIndex != startBoardIndex) {
-          const cardsLength = boardCards[endBoardIndex].cards.length
+          
           // move card with animation
-          for (let index = 0; index < boardCards[endBoardIndex].cards.length; index++) {
-            if(cardsLength-1-index == endCardIndex) {
-              cardActive.style.left = `${boardCards[endBoardIndex].rect.left}px`
-              cardActive.style.top = `${boardCards[endBoardIndex].cardsRect[cardsLength-index].top-boarderStyles.gap/2}px`
-              break;
-            }
-            const card = boardCards[endBoardIndex].cards[cardsLength-1-index];
-            const cardRect = boardCards[endBoardIndex].cardsRect[cardsLength-1-index];
-            document.getElementById(card.id).style.top = `${cardRect.top+height+boarderStyles.gap/2}px`
-          }
-
-          for (let index = startCardIndex+1; index < boardCards[startBoardIndex].cards.length; index++) {
-            const card = boardCards[startBoardIndex].cards[index];
-            const cardRect = boardCards[startBoardIndex].cardsRect[index-1];
-            document.getElementById(card.id).style.top = `${cardRect.top}px`
-          }
+          moveCardToAnotherBoard(endBoardIndex, endCardIndex, height)
           // end move card with animation
 
           // restructure data
@@ -213,10 +197,29 @@ function initFunc() {
     lastY=0
   })
 }
+function moveCardToAnotherBoard(endBoardIndex, endCardIndex, height) {
+  const cardsLength = boardCards[endBoardIndex].cards.length
+  for (let index = 0; index < boardCards[endBoardIndex].cards.length; index++) {
+    if(cardsLength-1-index == endCardIndex) {
+      break;
+    }
+    
+    const card = boardCards[endBoardIndex].cards[cardsLength-1-index];
+    const cardRect = boardCards[endBoardIndex].cardsRect[cardsLength-1-index];
+    document.getElementById(card.id).style.top = `${cardRect.top+height+boarderStyles.gap/2}px`
+  }
+
+  for (let index = startCardIndex+1; index < boardCards[startBoardIndex].cards.length; index++) {
+    const card = boardCards[startBoardIndex].cards[index];
+    const cardRect = boardCards[startBoardIndex].cardsRect[index-1];
+    document.getElementById(card.id).style.top = `${cardRect.top}px`
+  }
+}
 
 function findEndIndex({x, y, width}){
   let endBoardIndex = startBoardIndex;
   let endCardIndex = startCardIndex;
+
   for (let bIndex = 0; bIndex < boardCards.length; bIndex++) {
     const board = boardCards[bIndex];
       if(x >= board.rect.x && x+width <= board.rect.x+board.rect.width) {
@@ -230,6 +233,7 @@ function findEndIndex({x, y, width}){
         break;
       }
   }
+
   return {
     endBoardIndex,
     endCardIndex
@@ -341,7 +345,8 @@ init({
         title: "Item 5",
         description: "Board 1 Item 5",
       }],
-    },{
+    },
+    {
       id: "board-2",
       data: [
       {
@@ -358,6 +363,22 @@ init({
         id: "item-2-3",
         title: "Item 2 3",
         description: "Board 2 Item 3",
-      }]}
+      }]
+    },
+    {
+      id: "board-3",
+      data: [
+      {
+        id: "item-3-1",
+        title: "Item 3 1",
+        description: "Board 3 Item 1",
+      },
+      {
+        id: "item-3-2",
+        title: "Item 3 2",
+        description: "Board 3 Item 2",
+      }
+    ]
+    }
   ]
 })

@@ -16,6 +16,8 @@ var onDragStartFn = undefined
 var onDragEndFn = undefined
 var MULTIPLEDATA = undefined;
 var boarderStyles = undefined
+var lastY = 0;
+var lastX = 0;
 
 function createContainer({id, width, height, padding, gap}) {
   CONTAINER_EL = document.getElementById(id);
@@ -93,7 +95,7 @@ function init({id, gap, width, height, boardWidth, boardHeight, boardPadding, bo
   }
   createBoards(multipleData)
   setBoundingRect()
-  initFunc()
+  initDnDListener()
 }
 function onCardChoose(cardElement, boardIndex, cardIndex){
   startCardIndex = cardIndex
@@ -102,91 +104,90 @@ function onCardChoose(cardElement, boardIndex, cardIndex){
   cardActive = cardElement
 }
 
-function initFunc() {
-  var lastY = 0;
-  var lastX = 0;
+function initDnDListener() {
   document.querySelectorAll('.pg-board').forEach((be, bi) => {
     be.childNodes.forEach((ce, ci) => {
-      ce.addEventListener('mousedown', () => {
-        const [boardIndex, cardIndex] = ce.dataset.index.split("-")
-        startBoardIndex = parseInt(boardIndex)
-        startCardIndex = parseInt(cardIndex)
-
-        if(onDragStartFn) onDragStartFn(ci, ci)
-        cardActive = ce
-      })
+      ce.addEventListener('mousedown', () => onCardDrag(ce))
     })
   })
-  
-  CONTAINER_EL.addEventListener('mousedown', (e) => {
-      isDrag=true
-      const top = e.clientY - baseTop
-      lastY = top
-      lastX =  e.clientX
-    if(cardActive) cardActive.classList.add("pg-card-active")
-    setTimeout(() => {
-      if(cardActive) cardActive.classList.add("pg-card-active")
-    }, 10)
-  })
-  
-  CONTAINER_EL.addEventListener('mousemove', (e) => {
-    if(!cardActive) return;
-    const top = e.clientY - baseTop
-    if(isDrag && cardActive) {
-      if(lastY == 0) {
-        cards.forEach(c => {
-          c.classList.add("no-copy")
-        })
-      }
-      const Y = parseInt(cardActive.style.top.replace("px", "")) + top - lastY 
-      const X = e.clientX-boardCards[startBoardIndex].rect.x- boardCards[startBoardIndex].rect.width/2;
-      cardActive.style.top = `${Y}px`
-      cardActive.style.left = `${X}px`
-      lastX = e.clientX
-      lastY = top
-    }
-  })
-
-  CONTAINER_EL.addEventListener('mouseup', (e) => {
-    isDrag = false
-    if(cardActive) {
-      const { x, y, width, height } = cardActive.getBoundingClientRect();
-        
-      const {
-          endBoardIndex,
-          endCardIndex
-        } = findEndIndex({x, y, width})
-
-        // drop card in the same board
-        if(endBoardIndex == startBoardIndex) {
-          dropCardInTheSameBoard(endBoardIndex, endCardIndex, height)
-        } else if(endBoardIndex != startBoardIndex) {
-          // move card with animation
-          moveCardToAnotherBoard(endBoardIndex, endCardIndex, height)
-          // end move card with animation
-          restructureData(endBoardIndex, endCardIndex+1)
-        }
-        
-
-        //relayout element
-        setTimeout(() => {
-          boardCards.forEach((b, index) => {
-            boardCards[index]['rect'] = [];
-            boardCards[index]['cardsRect'] = [];
-          })
-          document.querySelectorAll(".pg-board").forEach(e => e.remove())
-          createBoards(MULTIPLEDATA)
-          setBoundingRect()
-          initFunc()
-        }, 100)
-        //end relayout element
-        onDragEndFn(startCardIndex, startBoardIndex, endCardIndex+1, endBoardIndex, MULTIPLEDATA)
-        resetActiveVariable()
-    }
-    lastY=0
-    lastX=0
-  })
+  CONTAINER_EL.addEventListener('mousemove', onCardMove)
+  CONTAINER_EL.addEventListener('mouseup',onCardDrop)
 }
+
+function onCardDrag(ce) {
+  isDrag=true
+  const [boardIndex, cardIndex] = ce.dataset.index.split("-")
+  startBoardIndex = parseInt(boardIndex)
+  startCardIndex = parseInt(cardIndex)
+
+  if(onDragStartFn) onDragStartFn(boardIndex, cardIndex)
+
+  cardActive = ce
+  if(cardActive) cardActive.classList.add("pg-card-active")
+
+  const top = ce.clientY - baseTop
+  lastY = top
+  lastX =  e.clientX
+}
+
+function onCardMove(e) {
+  if(!cardActive || !isDrag) return;
+  const top = e.clientY - baseTop
+  if(isDrag && cardActive) {
+    if(lastY == 0) {
+      cards.forEach(c => {
+        c.classList.add("no-copy")
+      })
+    }
+    const Y = parseInt(cardActive.style.top.replace("px", "")) + top - lastY 
+    const X = e.clientX-boardCards[startBoardIndex].rect.x- boardCards[startBoardIndex].rect.width/2;
+    cardActive.style.top = `${Y}px`
+    cardActive.style.left = `${X}px`
+    lastX = e.clientX
+    lastY = top
+  }
+}
+
+function onCardDrop() {
+  isDrag = false
+  if(cardActive) {
+    const { x, y, width, height } = cardActive.getBoundingClientRect();
+
+    const {
+        endBoardIndex,
+        endCardIndex
+      } = findEndIndex({x, y, width})
+
+      // drop card in the same board
+      if(endBoardIndex == startBoardIndex) {
+        dropCardInTheSameBoard(endBoardIndex, endCardIndex, height)
+      } else if(endBoardIndex != startBoardIndex) {
+        // move card with animation
+        moveCardToAnotherBoard(endBoardIndex, endCardIndex, height)
+        // end move card with animation
+        restructureData(endBoardIndex, endCardIndex)
+      }
+      
+
+      //relayout element
+      setTimeout(() => {
+        boardCards.forEach((b, index) => {
+          boardCards[index]['rect'] = [];
+          boardCards[index]['cardsRect'] = [];
+        })
+        document.querySelectorAll(".pg-board").forEach(e => e.remove())
+        createBoards(MULTIPLEDATA)
+        setBoundingRect()
+        initDnDListener()
+      }, 100)
+      //end relayout element
+      onDragEndFn(startCardIndex, startBoardIndex, endCardIndex+1, endBoardIndex, MULTIPLEDATA)
+      resetActiveVariable()
+  }
+  lastY=0
+  lastX=0
+}
+
 function moveCardToAnotherBoard(endBoardIndex, endCardIndex, height) {
   const cardsLength = boardCards[endBoardIndex].cards.length
   for (let index = 0; index < boardCards[endBoardIndex].cards.length; index++) {

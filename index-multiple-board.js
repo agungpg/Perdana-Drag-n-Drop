@@ -8,8 +8,8 @@ var cards = []
 const tempCards = [];
 var isDrag = false;
 var cardActive = undefined;
-var cardActiveIndex = -1;
-var boardActiveIndex = -1;
+var startCardIndex = -1;
+var startBoardIndex = -1;
 var baseTop = 0;
 var cardGap = 0
 var onDragStartFn = undefined
@@ -29,7 +29,7 @@ function createContainer({id, width, height, padding, gap}) {
 }
 
 function createBoards(multipleData) {
-  MULTIPLEDATA = multipleData
+  const isFirstRender = (boardCards.length == 0)
   multipleData.forEach((bdata, bIndex) => {
     const board =  createElement('div', `${bdata.id}-board`, boardClassName);
     if(boarderStyles.width) board.style.width = boarderStyles.width
@@ -40,16 +40,18 @@ function createBoards(multipleData) {
     bdata.data.forEach((cdata, index) => {
       const card = createCard({...cdata, gap: boarderStyles.gap, index})
       board.append(card)
-      // card.setAttribute('data-index', `${bIndex}-${index}`)
+      card.setAttribute('data-index', `${bIndex}-${index}`)
       cards.push(card)
     })
     CONTAINER_EL.append(board)
     board.setAttribute('data-index', `${bIndex}`)
-    boardCards.push({
-      id: bdata.id,
-      el: board,
-      cards: cards
-    })
+    if(isFirstRender){
+      boardCards.push({
+        id: bdata.id,
+        el: board,
+        cards: cards
+      })
+    }
   })
 }
 
@@ -82,6 +84,7 @@ function init({id, gap, width, height, boardWidth, boardHeight, boardPadding, bo
   onDragStartFn = onDragStart
   onDragEndFn = onDragEnd
   list=data
+  MULTIPLEDATA = multipleData
   createContainer({id, width, height, padding, gap})
   boarderStyles = {
     height: boardHeight,
@@ -90,12 +93,12 @@ function init({id, gap, width, height, boardWidth, boardHeight, boardPadding, bo
     width: boardWidth
   }
   createBoards(multipleData)
-  setBouding()
+  setBoundingRect()
   initFunc()
 }
 function onCardChoose(cardElement, boardIndex, cardIndex){
-  cardActiveIndex = cardIndex
-  boardActiveIndex = boardIndex
+  startCardIndex = cardIndex
+  startBoardIndex = boardIndex
   if(onDragStartFn) onDragStartFn(boardIndex, cardIndex)
   cardActive = cardElement
 }
@@ -103,16 +106,14 @@ function onCardChoose(cardElement, boardIndex, cardIndex){
 function initFunc() {
   var lastY = 0;
   var lastX = 0;
-  boardCards.forEach((bc, bci) => {
-    bc.cards.forEach((ce, ci) => {
+  document.querySelectorAll('.pg-board').forEach((be, bi) => {
+    be.childNodes.forEach((ce, ci) => {
       ce.addEventListener('mousedown', () => {
         const [boardIndex, cardIndex] = ce.dataset.index.split("-")
-        boardActiveIndex = parseInt(boardIndex)
-        cardActiveIndex = parseInt(cardIndex)
+        startBoardIndex = parseInt(boardIndex)
+        startCardIndex = parseInt(cardIndex)
 
-        // boardActiveIndex = bci
-        // cardActiveIndex = ci
-        if(onDragStartFn) onDragStartFn(bci, ci)
+        if(onDragStartFn) onDragStartFn(ci, ci)
         cardActive = ce
       })
     })
@@ -139,130 +140,113 @@ function initFunc() {
         })
       }
       const Y = parseInt(cardActive.style.top.replace("px", "")) + top - lastY 
-      const X = e.clientX - lastX;
+      const X = e.clientX-boardCards[startBoardIndex].rect.x- boardCards[startBoardIndex].rect.width/2;
       cardActive.style.top = `${Y}px`
-      cardActive.style.left = `${e.clientX-boardCards[boardActiveIndex].rect.x- boardCards[boardActiveIndex].rect.width/2}px`
+      cardActive.style.left = `${X}px`
       lastX = e.clientX
       lastY = top
     }
   })
 
-
-
   CONTAINER_EL.addEventListener('mouseup', (e) => {
     isDrag = false
     if(cardActive) {
-      const { x: prevX, y: prevY } = boardCards[boardActiveIndex].cardsRect[cardActiveIndex];
-        const { x, y, width, height } = cardActive.getBoundingClientRect();
-        const midX = x + (width/2)
-        const midY = x + (height/2)
-        const endY = x + height
-        const endX = x + width
-        let toBoardIndex = boardActiveIndex;
-        let toCardIndex = cardActiveIndex;
-        for (let bIndex = 0; bIndex < boardCards.length; bIndex++) {
-          const board = boardCards[bIndex];
-            if(x >= board.rect.x && x <= board.rect.x+board.rect.width) {
-              toBoardIndex = bIndex;
-              for (let cIndex = 0; cIndex < board.cardsRect.length; cIndex++) {
-                const cRect = board.cardsRect[cIndex];
-                if(y > cRect.y) {
-                  toCardIndex = cIndex;
-                }
-              }
-              break;
-            }
-        }
-        console.log({toBoardIndex, boardActiveIndex})
-        console.log({toCardIndex, cardActiveIndex})
-        // card is put outside board
-        if(toBoardIndex == boardActiveIndex) {
-          cardActive.style.top = `${boardCards[boardActiveIndex].cardsRect[cardActiveIndex].y-boarderStyles.gap/2}px`
-          cardActive.style.left = `${boardCards[boardActiveIndex].cardsRect[cardActiveIndex].x-boardCards[0].rect.x}px`
-          
-          resetActiveVariable()
+      const { x, y, width, height } = cardActive.getBoundingClientRect();
+        
+      const {
+          endBoardIndex,
+          endCardIndex
+        } = findEndIndex({x, y, width})
+
+        // drop card in the same board
+        if(endBoardIndex == startBoardIndex) {
+          DropCardInTheSameBoard()
           return;
         }
 
-        if(toBoardIndex != boardActiveIndex) {
-          const cardsLength = boardCards[toBoardIndex].cards.length
-          for (let index = 0; index < boardCards[toBoardIndex].cards.length; index++) {
-            if(cardsLength-1-index == toCardIndex) {
-              cardActive.style.left = `${boardCards[toBoardIndex].rect.left}px`
-              cardActive.style.top = `${boardCards[toBoardIndex].cardsRect[cardsLength-index].top-boarderStyles.gap/2}px`
+
+        if(endBoardIndex != startBoardIndex) {
+          const cardsLength = boardCards[endBoardIndex].cards.length
+          // move card with animation
+          for (let index = 0; index < boardCards[endBoardIndex].cards.length; index++) {
+            if(cardsLength-1-index == endCardIndex) {
+              cardActive.style.left = `${boardCards[endBoardIndex].rect.left}px`
+              cardActive.style.top = `${boardCards[endBoardIndex].cardsRect[cardsLength-index].top-boarderStyles.gap/2}px`
               break;
             }
-            const card = boardCards[toBoardIndex].cards[cardsLength-1-index];
-            const cardRect = boardCards[toBoardIndex].cardsRect[cardsLength-1-index];
+            const card = boardCards[endBoardIndex].cards[cardsLength-1-index];
+            const cardRect = boardCards[endBoardIndex].cardsRect[cardsLength-1-index];
             document.getElementById(card.id).style.top = `${cardRect.top+height+boarderStyles.gap/2}px`
           }
 
-          for (let index = cardActiveIndex+1; index < boardCards[boardActiveIndex].cards.length; index++) {
-            const card = boardCards[boardActiveIndex].cards[index];
-            const cardRect = boardCards[boardActiveIndex].cardsRect[index-1];
+          for (let index = startCardIndex+1; index < boardCards[startBoardIndex].cards.length; index++) {
+            const card = boardCards[startBoardIndex].cards[index];
+            const cardRect = boardCards[startBoardIndex].cardsRect[index-1];
             document.getElementById(card.id).style.top = `${cardRect.top}px`
           }
+          // end move card with animation
 
-          const NEWMULTIPLEDATA = [...MULTIPLEDATA];
-          const newBoardCards = [...boardCards];
-          console.log("NEWMULTIPLEDATA[boardActiveIndex].cards: ", NEWMULTIPLEDATA[boardActiveIndex])
-          const dataMove = NEWMULTIPLEDATA[boardActiveIndex].data.splice(cardActiveIndex, 1)
-          const cardElMove = newBoardCards[boardActiveIndex].cards.splice(cardActiveIndex, 1)
+          // restructure data
+          const dataMove = MULTIPLEDATA[startBoardIndex].data.splice(startCardIndex, 1)
+          const cardElMove = boardCards[startBoardIndex].cards.splice(startCardIndex, 1)
+          MULTIPLEDATA[endBoardIndex].data.splice(endCardIndex+1, 0, dataMove[0]);
+          boardCards[endBoardIndex].cards.splice(endCardIndex+1, 0, cardElMove[0]);
+          // end restructure data
 
-          const newCardForToBoard = [];
-          const newCardElForToBoard = [];
-          for (let index = 0; index <= NEWMULTIPLEDATA[toBoardIndex].data.length; index++) {
-            if(index < toCardIndex+1) {
-              newCardForToBoard[index] = NEWMULTIPLEDATA[toBoardIndex].data[index];
-              newCardElForToBoard[index] = newBoardCards[toBoardIndex].cards[index];
-
-            }else if(index == toCardIndex+1) {
-              newCardForToBoard[index]=dataMove[0]
-              newCardElForToBoard[index]=cardElMove[0]
-            }else {
-              newCardForToBoard[index] = NEWMULTIPLEDATA[toBoardIndex].data[index-1];
-              newCardElForToBoard[index] = newBoardCards[toBoardIndex].cards[index-1];
-            }
-          }
-          NEWMULTIPLEDATA[toBoardIndex].data = newCardForToBoard
-          newBoardCards[toBoardIndex].cards = newCardElForToBoard;
-          boardCards.forEach((bc, bci) => {
-            bc.cards.forEach((ce, ci) => {
-              ce.removeEventListener('mousedown', () => {
-                cardActiveIndex = ci
-                boardActiveIndex = bci
-                if(onDragStartFn) onDragStartFn(bci, ci)
-                cardActive = ce
-              })
-            })
-          })
-          boardCards = newBoardCards
-          boardCards.forEach((b, index) => {
-            boardCards[index]['rect'] = [];
-            boardCards[index]['cardsRect'] = [];
-          })
+          //relayout element
           setTimeout(() => {
-            setBouding()
+            boardCards.forEach((b, index) => {
+              boardCards[index]['rect'] = [];
+              boardCards[index]['cardsRect'] = [];
+            })
+            document.querySelectorAll(".pg-board").forEach(e => e.remove())
+            createBoards(MULTIPLEDATA)
+            setBoundingRect()
             initFunc()
-          },100 )
-
-          console.log({
-            boardCards,
-            newBoardCards,
-            NEWMULTIPLEDATA, 
-            MULTIPLEDATA
-          })
+          }, 100)
+          //end relayout element
         }
 
+        onDragEndFn(startCardIndex, startBoardIndex, endCardIndex+1, endBoardIndex, MULTIPLEDATA)
         resetActiveVariable()
     }
     lastY=0
   })
 }
+
+function findEndIndex({x, y, width}){
+  let endBoardIndex = startBoardIndex;
+  let endCardIndex = startCardIndex;
+  for (let bIndex = 0; bIndex < boardCards.length; bIndex++) {
+    const board = boardCards[bIndex];
+      if(x >= board.rect.x && x+width <= board.rect.x+board.rect.width) {
+        endBoardIndex = bIndex;
+        for (let cIndex = 0; cIndex < board.cardsRect.length; cIndex++) {
+          const cRect = board.cardsRect[cIndex];
+          if(y > cRect.y) {
+            endCardIndex = cIndex;
+          }
+        }
+        break;
+      }
+  }
+  return {
+    endBoardIndex,
+    endCardIndex
+  }
+}
+
+function DropCardInTheSameBoard(){
+  cardActive.style.top = `${boardCards[startBoardIndex].cardsRect[startCardIndex].y-boarderStyles.gap/2}px`
+  cardActive.style.left = `${boardCards[startBoardIndex].cardsRect[startCardIndex].x-boardCards[0].rect.x}px`
+  
+  resetActiveVariable()
+}
+
 function resetActiveVariable(){
   cardActive.classList.remove("pg-card-active")
-  cardActiveIndex = -1
-  boardActiveIndex = -1
+  startCardIndex = -1
+  startBoardIndex = -1
   cardActive = undefined;
 }
 function reOrderData(startIndex, endIndex, data){
@@ -296,22 +280,19 @@ function reOrderData(startIndex, endIndex, data){
   }
 }
 
-function setBouding() {
-  setTimeout(() => {
-    boardCards.forEach((bc, bIdx) => {
-      boardCards[bIdx]['rect'] = bc.el.getBoundingClientRect()
-      bc.cards.forEach((c, cidx) => {
-        c.setAttribute('data-index', `${bIdx}-${cidx}`)
-        if(!boardCards[bIdx].cardsRect) {
-          boardCards[bIdx].cardsRect = []
-          boardCards[bIdx].cardsRect.push(c.getBoundingClientRect())
+function setBoundingRect() {
+    document.querySelectorAll('.pg-board').forEach((be, bi) => {
+      boardCards[bi]['rect'] = be.getBoundingClientRect()
+      be.childNodes.forEach((ce, ci) => {
+        if(!boardCards[bi].cardsRect) {
+          boardCards[bi].cardsRect = []
+          boardCards[bi].cardsRect.push(ce.getBoundingClientRect())
         } else {
-          boardCards[bIdx].cardsRect.push(c.getBoundingClientRect())
+          boardCards[bi].cardsRect.push(ce.getBoundingClientRect())
         }
       })
-    }) 
+    })
     baseTop = boardCards[0]['cardsRect'][0].y
-  }, 10)
 }
 
 init({
@@ -328,8 +309,8 @@ init({
     console.log("onDragStart")
     console.log({boardIndex, cardIndex})
   },
-  onDragEnd:(startIndex, endIndex, data) => {
-    console.log("onDragStart: ", {startIndex, endIndex, data})
+  onDragEnd:(startCardIndex, startBoardIndex, endCardIndex, endBoardIndex, data) => {
+    console.log("onDragStart: ", {startCardIndex, startBoardIndex, endCardIndex, endBoardIndex, data})
   },
   multipleData: [
     {

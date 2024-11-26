@@ -1,53 +1,51 @@
-var CONTAINER_EL = undefined;
-var HEADER_EL = undefined;
-const containerClassName = "pg-board-container"
-const boardClassName = "pg-board"
-var boardCards = [];
-var cardsBounding = []
-var cards = []
-const tempCards = [];
-var isDrag = false;
-var cardActive = undefined;
-var startCardIndex = -1;
-var startBoardIndex = -1;
-var baseTop = 0;
-var cardGap = 0
-var onDragStartFn = undefined
-var onDragEndFn = undefined
-var MULTIPLEDATA = undefined;
-var boarderStyles = undefined
-var lastY = 0;
-var lastX = 0;
+const PerdanaDnDMultipleData = {
+  data: undefined,
+  container: undefined,
+  containerClassName: "pg-board-container",
+  boardClassName: "pg-board",
+  elements: [],
+  isDraging: false,
+  cardActiveElement: undefined,
+  startBoardIndex: -1,
+  startCardIndex: -1,
+  baseTop: 0,
+  onDragStartFn: undefined,
+  onDragEndFn: undefined,
+  boarderStyle: undefined,
+  cardStyle: undefined,
+  lastY: 0,
+  lastX: 0,
+}
 
 function createContainer({id, width, height, padding, gap}) {
-  CONTAINER_EL = document.getElementById(id);
-  if(!CONTAINER_EL) throw new Error(`Element with ${id} is not available!`);
-  CONTAINER_EL.classList.add(containerClassName);
-  CONTAINER_EL.style.width = width
-  CONTAINER_EL.style.height = height
-  CONTAINER_EL.style.gap = `${gap}px`
-  if(padding) CONTAINER_EL.style.padding = `${padding}px`;
+  PerdanaDnDMultipleData.container = document.getElementById(id);
+  if(!PerdanaDnDMultipleData.container) throw new Error(`Element with ${id} is not available!`);
+  PerdanaDnDMultipleData.container.classList.add(PerdanaDnDMultipleData.containerClassName);
+  PerdanaDnDMultipleData.container.style.width = width
+  PerdanaDnDMultipleData.container.style.height = height
+  PerdanaDnDMultipleData.container.style.gap = `${gap}px`
+  if(padding) PerdanaDnDMultipleData.container.style.padding = `${padding}px`;
 }
 
 function createBoards(multipleData) {
-  const isFirstRender = (boardCards.length == 0)
+  const isFirstRender = (PerdanaDnDMultipleData.elements.length == 0)
   multipleData.forEach((bdata, bIndex) => {
-    const board =  createElement('div', `${bdata.id}-board`, boardClassName);
-    if(boarderStyles.width) board.style.width = boarderStyles.width
-    if(boarderStyles.height) board.style.height = boarderStyles.height
-    if(boarderStyles.gap)  board.style.gap = `${boarderStyles.gap}px`
-    if(boarderStyles.padding) board.style.padding = `${boarderStyles.padding}px`
+    const board =  createElement('div', `${bdata.id}-board`, PerdanaDnDMultipleData.boardClassName);
+    if(PerdanaDnDMultipleData.boarderStyles.width) board.style.width = PerdanaDnDMultipleData.boarderStyles.width
+    if(PerdanaDnDMultipleData.boarderStyles.height) board.style.height = PerdanaDnDMultipleData.boarderStyles.height
+    if(PerdanaDnDMultipleData.boarderStyles.gap)  board.style.gap = `${PerdanaDnDMultipleData.boarderStyles.gap}px`
+    if(PerdanaDnDMultipleData.boarderStyles.padding) board.style.padding = `${PerdanaDnDMultipleData.boarderStyles.padding}px`
     const cards = []
     bdata.data.forEach((cdata, index) => {
-      const card = createCard({...cdata, gap: boarderStyles.gap, index})
+      const card = createCard({...cdata, gap: PerdanaDnDMultipleData.boarderStyles.gap, index})
       board.append(card)
       card.setAttribute('data-index', `${bIndex}-${index}`)
       cards.push(card)
     })
-    CONTAINER_EL.append(board)
+    PerdanaDnDMultipleData.container.append(board)
     board.setAttribute('data-index', `${bIndex}`)
     if(isFirstRender){
-      boardCards.push({
+      PerdanaDnDMultipleData.elements.push({
         id: bdata.id,
         el: board,
         cards: cards
@@ -80,28 +78,22 @@ function createCard({ id, title,  description, index, gap}) {
   return cardEl
 }
 
-function init({id, gap, width, height, boardWidth, boardHeight, boardPadding, boardGap, padding, data, multipleData, onDragStart, onDragEnd}) {
-  cardGap = gap
-  onDragStartFn = onDragStart
-  onDragEndFn = onDragEnd
+function init({id, gap, width, height, padding, data, multipleData, onDragStart, onDragEnd, boarderStyles}) {
+  PerdanaDnDMultipleData.onDragStartFn = onDragStart
+  PerdanaDnDMultipleData.onDragEndFn = onDragEnd
   list=data
-  MULTIPLEDATA = multipleData
+  PerdanaDnDMultipleData.data = multipleData
   createContainer({id, width, height, padding, gap})
-  boarderStyles = {
-    height: boardHeight,
-    gap: boardGap, 
-    padding: boardPadding,
-    width: boardWidth
-  }
+  PerdanaDnDMultipleData.boarderStyles = boarderStyles
   createBoards(multipleData)
   setBoundingRect()
   initDnDListener()
 }
 function onCardChoose(cardElement, boardIndex, cardIndex){
-  startCardIndex = cardIndex
-  startBoardIndex = boardIndex
-  if(onDragStartFn) onDragStartFn(boardIndex, cardIndex)
-  cardActive = cardElement
+  PerdanaDnDMultipleData.startCardIndex = cardIndex
+  PerdanaDnDMultipleData.startBoardIndex = boardIndex
+  if(PerdanaDnDMultipleData.onDragStartFn) PerdanaDnDMultipleData.onDragStartFn(boardIndex, cardIndex)
+  PerdanaDnDMultipleData.cardActiveElement = cardElement
 }
 
 function initDnDListener() {
@@ -110,48 +102,48 @@ function initDnDListener() {
       ce.addEventListener('mousedown', () => onCardDrag(ce))
     })
   })
-  CONTAINER_EL.addEventListener('mousemove', onCardMove)
-  CONTAINER_EL.addEventListener('mouseup',onCardDrop)
+  PerdanaDnDMultipleData.container.addEventListener('mousemove', onCardMove)
+  PerdanaDnDMultipleData.container.addEventListener('mouseup',onCardDrop)
 }
 
 function onCardDrag(ce) {
-  isDrag=true
+  PerdanaDnDMultipleData.isDraging=true
   const [boardIndex, cardIndex] = ce.dataset.index.split("-")
-  startBoardIndex = parseInt(boardIndex)
-  startCardIndex = parseInt(cardIndex)
+  PerdanaDnDMultipleData.startBoardIndex = parseInt(boardIndex)
+  PerdanaDnDMultipleData.startCardIndex = parseInt(cardIndex)
 
-  if(onDragStartFn) onDragStartFn(boardIndex, cardIndex)
+  if(PerdanaDnDMultipleData.onDragStartFn) PerdanaDnDMultipleData.onDragStartFn(boardIndex, cardIndex)
 
-  cardActive = ce
-  if(cardActive) cardActive.classList.add("pg-card-active")
+  PerdanaDnDMultipleData.cardActiveElement = ce
+  if(PerdanaDnDMultipleData.cardActiveElement) PerdanaDnDMultipleData.cardActiveElement.classList.add("pg-card-active")
 
-  const top = ce.clientY - baseTop
-  lastY = top
-  lastX =  e.clientX
+  const top = ce.clientY - PerdanaDnDMultipleData.baseTop
+  PerdanaDnDMultipleData.lastY = top
+  PerdanaDnDMultipleData.lastX =  ce.clientX
 }
 
 function onCardMove(e) {
-  if(!cardActive || !isDrag) return;
-  const top = e.clientY - baseTop
-  if(isDrag && cardActive) {
-    if(lastY == 0) {
+  if(!PerdanaDnDMultipleData.cardActiveElement || !PerdanaDnDMultipleData.isDraging) return;
+  const top = e.clientY - PerdanaDnDMultipleData.baseTop
+  if(PerdanaDnDMultipleData.isDraging && PerdanaDnDMultipleData.cardActiveElement) {
+    if(PerdanaDnDMultipleData.lastY == 0) {
       cards.forEach(c => {
         c.classList.add("no-copy")
       })
     }
-    const Y = parseInt(cardActive.style.top.replace("px", "")) + top - lastY 
-    const X = e.clientX-boardCards[startBoardIndex].rect.x- boardCards[startBoardIndex].rect.width/2;
-    cardActive.style.top = `${Y}px`
-    cardActive.style.left = `${X}px`
-    lastX = e.clientX
-    lastY = top
+    const Y = parseInt(PerdanaDnDMultipleData.cardActiveElement.style.top.replace("px", "")) + top - PerdanaDnDMultipleData.lastY 
+    const X = e.clientX-PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].rect.x- PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].rect.width/2;
+    PerdanaDnDMultipleData.cardActiveElement.style.top = `${Y}px`
+    PerdanaDnDMultipleData.cardActiveElement.style.left = `${X}px`
+    PerdanaDnDMultipleData.lastX = e.clientX
+    PerdanaDnDMultipleData.lastY = top
   }
 }
 
 function onCardDrop() {
-  isDrag = false
-  if(cardActive) {
-    const { x, y, width, height } = cardActive.getBoundingClientRect();
+  PerdanaDnDMultipleData.isDraging = false
+  if(PerdanaDnDMultipleData.cardActiveElement) {
+    const { x, y, width, height } = PerdanaDnDMultipleData.cardActiveElement.getBoundingClientRect();
 
     const {
         endBoardIndex,
@@ -159,60 +151,60 @@ function onCardDrop() {
       } = findEndIndex({x, y, width})
 
       // drop card in the same board
-      if(endBoardIndex == startBoardIndex) {
+      if(endBoardIndex == PerdanaDnDMultipleData.startBoardIndex) {
         dropCardInTheSameBoard(endBoardIndex, endCardIndex, height)
-      } else if(endBoardIndex != startBoardIndex) {
+      } else if(endBoardIndex != PerdanaDnDMultipleData.startBoardIndex) {
         // move card with animation
         moveCardToAnotherBoard(endBoardIndex, endCardIndex, height)
         // end move card with animation
-        restructureData(endBoardIndex, endCardIndex)
+        restructureData(endBoardIndex, endCardIndex+1)
       }
       
 
       //relayout element
       setTimeout(() => {
-        boardCards.forEach((b, index) => {
-          boardCards[index]['rect'] = [];
-          boardCards[index]['cardsRect'] = [];
+        PerdanaDnDMultipleData.elements.forEach((b, index) => {
+          PerdanaDnDMultipleData.elements[index]['rect'] = [];
+          PerdanaDnDMultipleData.elements[index]['cardsRect'] = [];
         })
         document.querySelectorAll(".pg-board").forEach(e => e.remove())
-        createBoards(MULTIPLEDATA)
+        createBoards(PerdanaDnDMultipleData.data)
         setBoundingRect()
         initDnDListener()
       }, 100)
       //end relayout element
-      onDragEndFn(startCardIndex, startBoardIndex, endCardIndex+1, endBoardIndex, MULTIPLEDATA)
+      if(PerdanaDnDMultipleData.onDragEndFn) PerdanaDnDMultipleData.onDragEndFn(PerdanaDnDMultipleData.startCardIndex, PerdanaDnDMultipleData.startBoardIndex, endCardIndex+1, endBoardIndex, PerdanaDnDMultipleData.data)
       resetActiveVariable()
   }
-  lastY=0
-  lastX=0
+  PerdanaDnDMultipleData.lastY=0
+  PerdanaDnDMultipleData.lastX=0
 }
 
 function moveCardToAnotherBoard(endBoardIndex, endCardIndex, height) {
-  const cardsLength = boardCards[endBoardIndex].cards.length
-  for (let index = 0; index < boardCards[endBoardIndex].cards.length; index++) {
+  const cardsLength = PerdanaDnDMultipleData.elements[endBoardIndex].cards.length
+  for (let index = 0; index < PerdanaDnDMultipleData.elements[endBoardIndex].cards.length; index++) {
     if(cardsLength-1-index == endCardIndex) {
       break;
     }
     
-    const card = boardCards[endBoardIndex].cards[cardsLength-1-index];
-    const cardRect = boardCards[endBoardIndex].cardsRect[cardsLength-1-index];
-    document.getElementById(card.id).style.top = `${cardRect.top+height+boarderStyles.gap/2}px`
+    const card = PerdanaDnDMultipleData.elements[endBoardIndex].cards[cardsLength-1-index];
+    const cardRect = PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[cardsLength-1-index];
+    document.getElementById(card.id).style.top = `${cardRect.top+height+PerdanaDnDMultipleData.boarderStyles.gap/2}px`
   }
 
-  for (let index = startCardIndex+1; index < boardCards[startBoardIndex].cards.length; index++) {
-    const card = boardCards[startBoardIndex].cards[index];
-    const cardRect = boardCards[startBoardIndex].cardsRect[index-1];
+  for (let index = PerdanaDnDMultipleData.startCardIndex+1; index < PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cards.length; index++) {
+    const card = PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cards[index];
+    const cardRect = PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cardsRect[index-1];
     document.getElementById(card.id).style.top = `${cardRect.top}px`
   }
 }
 
 function findEndIndex({x, y, width}){
-  let endBoardIndex = startBoardIndex;
-  let endCardIndex = startCardIndex;
+  let endBoardIndex = PerdanaDnDMultipleData.startBoardIndex;
+  let endCardIndex = PerdanaDnDMultipleData.startCardIndex;
 
-  for (let bIndex = 0; bIndex < boardCards.length; bIndex++) {
-    const board = boardCards[bIndex];
+  for (let bIndex = 0; bIndex < PerdanaDnDMultipleData.elements.length; bIndex++) {
+    const board = PerdanaDnDMultipleData.elements[bIndex];
       if(x >= board.rect.x && x+width <= board.rect.x+board.rect.width) {
         endBoardIndex = bIndex;
         for (let cIndex = 0; cIndex < board.cardsRect.length; cIndex++) {
@@ -232,49 +224,50 @@ function findEndIndex({x, y, width}){
 }
 
 function dropCardInTheSameBoard(endBoardIndex, endCardIndex, height){
-  const cardsLength = boardCards[endBoardIndex].cards.length
-  cardActive.style.top = `${boardCards[startBoardIndex].cardsRect[startCardIndex].y-boarderStyles.gap/2}px`
-  cardActive.style.left = `${boardCards[startBoardIndex].cardsRect[startCardIndex].x-boardCards[0].rect.x}px`
+  const cardsLength = PerdanaDnDMultipleData.elements[endBoardIndex].cards.length
+  PerdanaDnDMultipleData.cardActiveElement.style.top = `${PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cardsRect[PerdanaDnDMultipleData.startCardIndex].y-PerdanaDnDMultipleData.boarderStyles.gap/2}px`
+  PerdanaDnDMultipleData.cardActiveElement.style.left = `${PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cardsRect[PerdanaDnDMultipleData.startCardIndex].x-PerdanaDnDMultipleData.elements[0].rect.x}px`
 
-  if(endCardIndex+1 == startCardIndex) return;
+  if(endCardIndex+1 == PerdanaDnDMultipleData.startCardIndex) return;
 
-  if(endCardIndex+1 > startCardIndex) {
-    for (let index = startCardIndex; index < endCardIndex; index++) {
-      const cardRect = boardCards[endBoardIndex].cardsRect[index];
-      const card = boardCards[endBoardIndex].cards[index+1];
+  if(endCardIndex+1 > PerdanaDnDMultipleData.startCardIndex) {
+    for (let index = PerdanaDnDMultipleData.startCardIndex; index < endCardIndex; index++) {
+      const cardRect = PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[index];
+      const card = PerdanaDnDMultipleData.elements[endBoardIndex].cards[index+1];
 
-      document.getElementById(card.id).style.top = `${cardRect.top-boarderStyles.gap/2}px`
+      document.getElementById(card.id).style.top = `${cardRect.top-PerdanaDnDMultipleData.boarderStyles.gap/2}px`
     }
-    document.getElementById(cardActive.id).style.top = `${boardCards[endBoardIndex].cardsRect[endCardIndex].top-boarderStyles.gap/2}px`
+    document.getElementById(PerdanaDnDMultipleData.cardActiveElement.id).style.top = `${PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[endCardIndex].top-PerdanaDnDMultipleData.boarderStyles.gap/2}px`
 
     restructureData(endBoardIndex, endCardIndex-1)
-  } else if(endCardIndex+1 < startCardIndex) {
+  } else if(endCardIndex+1 < PerdanaDnDMultipleData.startCardIndex) {
     for (let index = cardsLength-2; index > endCardIndex; index--) {
-      const cardRect = boardCards[endBoardIndex].cardsRect[index];
-      const card = boardCards[endBoardIndex].cards[index];
+      const cardRect = PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[index];
+      const card = PerdanaDnDMultipleData.elements[endBoardIndex].cards[index];
 
-      document.getElementById(card.id).style.top = `${cardRect.top+height+boarderStyles.gap/2}px`
+      document.getElementById(card.id).style.top = `${cardRect.top+height+PerdanaDnDMultipleData.boarderStyles.gap/2}px`
       if(index == endCardIndex+1){
-        document.getElementById(cardActive.id).style.top = `${boardCards[endBoardIndex].cardsRect[index-1].top+height+boarderStyles.gap/2}px`
+        document.getElementById(PerdanaDnDMultipleData.cardActiveElement.id).style.top = `${PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[index-1].top+height+PerdanaDnDMultipleData.boarderStyles.gap/2}px`
       }
     }
     restructureData(endBoardIndex, endCardIndex+1)
   }
 }
 function restructureData(endBoardIndex, endCardIndex) {
+  console.log("restructureData: ", {endBoardIndex, endCardIndex})
     // restructure data
-    const dataMove = MULTIPLEDATA[startBoardIndex].data.splice(startCardIndex, 1)
-    const cardElMove = boardCards[startBoardIndex].cards.splice(startCardIndex, 1)
-    MULTIPLEDATA[endBoardIndex].data.splice(endCardIndex+1, 0, dataMove[0]);
-    boardCards[endBoardIndex].cards.splice(endCardIndex+1, 0, cardElMove[0]);
+    const dataMove = PerdanaDnDMultipleData.data[PerdanaDnDMultipleData.startBoardIndex].data.splice(PerdanaDnDMultipleData.startCardIndex, 1)
+    const cardElMove = PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cards.splice(PerdanaDnDMultipleData.startCardIndex, 1)
+    PerdanaDnDMultipleData.data[endBoardIndex].data.splice(endCardIndex, 0, dataMove[0]);
+    PerdanaDnDMultipleData.elements[endBoardIndex].cards.splice(endCardIndex, 0, cardElMove[0]);
     // end restructure data
 }
 
 function resetActiveVariable(){
-  cardActive.classList.remove("pg-card-active")
-  startCardIndex = -1
-  startBoardIndex = -1
-  cardActive = undefined;
+  PerdanaDnDMultipleData.cardActiveElement.classList.remove("pg-card-active")
+  PerdanaDnDMultipleData.startCardIndex = -1
+  PerdanaDnDMultipleData.startBoardIndex = -1
+  PerdanaDnDMultipleData.cardActiveElement = undefined;
 }
 function reOrderData(startIndex, endIndex, data){
   if(startIndex > endIndex) {
@@ -306,32 +299,33 @@ function reOrderData(startIndex, endIndex, data){
     
   }
 }
-
 function setBoundingRect() {
     document.querySelectorAll('.pg-board').forEach((be, bi) => {
-      boardCards[bi]['rect'] = be.getBoundingClientRect()
+      PerdanaDnDMultipleData.elements[bi]['rect'] = be.getBoundingClientRect()
       be.childNodes.forEach((ce, ci) => {
-        if(!boardCards[bi].cardsRect) {
-          boardCards[bi].cardsRect = []
-          boardCards[bi].cardsRect.push(ce.getBoundingClientRect())
+        if(!PerdanaDnDMultipleData.elements[bi].cardsRect) {
+          PerdanaDnDMultipleData.elements[bi].cardsRect = []
+          PerdanaDnDMultipleData.elements[bi].cardsRect.push(ce.getBoundingClientRect())
         } else {
-          boardCards[bi].cardsRect.push(ce.getBoundingClientRect())
+          PerdanaDnDMultipleData.elements[bi].cardsRect.push(ce.getBoundingClientRect())
         }
       })
     })
-    baseTop = boardCards[0]['cardsRect'][0].y
+    PerdanaDnDMultipleData.baseTop = PerdanaDnDMultipleData.elements[0]['cardsRect'][0].y
 }
 
 init({
   id: "container",
   width: '100%',
   height: '100%',
-  boardWidth: "300px",
-  boardHeight: "600px",
   padding: 20, 
-  boardPadding: 20, 
   gap: 12,
-  boardGap: 20,
+  boarderStyles: {
+    width: "300px",
+    height: "600px",
+    padding: 20,
+    gap: 20,
+  },
   onDragStart:(boardIndex, cardIndex) => {
     console.log("onDragStart: ", {boardIndex, cardIndex})
   },

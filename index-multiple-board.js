@@ -14,7 +14,6 @@ var baseTop = 0;
 var cardGap = 0
 var onDragStartFn = undefined
 var onDragEndFn = undefined
-var list = []
 var MULTIPLEDATA = undefined;
 var boarderStyles = undefined
 
@@ -165,14 +164,9 @@ function initFunc() {
           // move card with animation
           moveCardToAnotherBoard(endBoardIndex, endCardIndex, height)
           // end move card with animation
+          restructureData(endBoardIndex, endCardIndex+1)
         }
         
-        // restructure data
-        const dataMove = MULTIPLEDATA[startBoardIndex].data.splice(startCardIndex, 1)
-        const cardElMove = boardCards[startBoardIndex].cards.splice(startCardIndex, 1)
-        MULTIPLEDATA[endBoardIndex].data.splice(endCardIndex+1, 0, dataMove[0]);
-        boardCards[endBoardIndex].cards.splice(endCardIndex+1, 0, cardElMove[0]);
-        // end restructure data
 
         //relayout element
         setTimeout(() => {
@@ -190,6 +184,7 @@ function initFunc() {
         resetActiveVariable()
     }
     lastY=0
+    lastX=0
   })
 }
 function moveCardToAnotherBoard(endBoardIndex, endCardIndex, height) {
@@ -239,18 +234,19 @@ function dropCardInTheSameBoard(endBoardIndex, endCardIndex, height){
   const cardsLength = boardCards[endBoardIndex].cards.length
   cardActive.style.top = `${boardCards[startBoardIndex].cardsRect[startCardIndex].y-boarderStyles.gap/2}px`
   cardActive.style.left = `${boardCards[startBoardIndex].cardsRect[startCardIndex].x-boardCards[0].rect.x}px`
+
   if(endCardIndex+1 == startCardIndex) return;
-  //get direction
+
   if(endCardIndex+1 > startCardIndex) {
-    for (let index = startCardIndex+1; index <= endCardIndex; index++) {
-      const cardRect = boardCards[endBoardIndex].cardsRect[index-1];
-      const card = boardCards[endBoardIndex].cards[index];
+    for (let index = startCardIndex; index < endCardIndex; index++) {
+      const cardRect = boardCards[endBoardIndex].cardsRect[index];
+      const card = boardCards[endBoardIndex].cards[index+1];
 
       document.getElementById(card.id).style.top = `${cardRect.top-boarderStyles.gap/2}px`
-      if(index == endCardIndex){
-        document.getElementById(cardActive.id).style.top = `${boardCards[endBoardIndex].cardsRect[index].top-boarderStyles.gap/2}px`
-      }
     }
+    document.getElementById(cardActive.id).style.top = `${boardCards[endBoardIndex].cardsRect[endCardIndex].top-boarderStyles.gap/2}px`
+
+    restructureData(endBoardIndex, endCardIndex-1)
   } else if(endCardIndex+1 < startCardIndex) {
     for (let index = cardsLength-2; index > endCardIndex; index--) {
       const cardRect = boardCards[endBoardIndex].cardsRect[index];
@@ -261,8 +257,16 @@ function dropCardInTheSameBoard(endBoardIndex, endCardIndex, height){
         document.getElementById(cardActive.id).style.top = `${boardCards[endBoardIndex].cardsRect[index-1].top+height+boarderStyles.gap/2}px`
       }
     }
-
+    restructureData(endBoardIndex, endCardIndex+1)
   }
+}
+function restructureData(endBoardIndex, endCardIndex) {
+    // restructure data
+    const dataMove = MULTIPLEDATA[startBoardIndex].data.splice(startCardIndex, 1)
+    const cardElMove = boardCards[startBoardIndex].cards.splice(startCardIndex, 1)
+    MULTIPLEDATA[endBoardIndex].data.splice(endCardIndex+1, 0, dataMove[0]);
+    boardCards[endBoardIndex].cards.splice(endCardIndex+1, 0, cardElMove[0]);
+    // end restructure data
 }
 
 function resetActiveVariable(){

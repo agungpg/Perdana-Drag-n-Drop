@@ -11,7 +11,7 @@ const PerdanaDnDMultipleData = {
   baseTop: 0,
   onDragStartFn: undefined,
   onDragEndFn: undefined,
-  boarderStyle: undefined,
+  boarderStyles: undefined,
   cardStyle: undefined,
   lastY: 0,
   lastX: 0,
@@ -300,18 +300,34 @@ function reOrderData(startIndex, endIndex, data){
   }
 }
 function setBoundingRect() {
-    document.querySelectorAll('.pg-board').forEach((be, bi) => {
-      PerdanaDnDMultipleData.elements[bi]['rect'] = be.getBoundingClientRect()
-      be.childNodes.forEach((ce, ci) => {
-        if(!PerdanaDnDMultipleData.elements[bi].cardsRect) {
-          PerdanaDnDMultipleData.elements[bi].cardsRect = []
-          PerdanaDnDMultipleData.elements[bi].cardsRect.push(ce.getBoundingClientRect())
-        } else {
-          PerdanaDnDMultipleData.elements[bi].cardsRect.push(ce.getBoundingClientRect())
-        }
-      })
+  const { gap, height, padding } = PerdanaDnDMultipleData.boarderStyles
+  let { elements, baseTop } = PerdanaDnDMultipleData
+
+  document.querySelectorAll('.pg-board').forEach((be, bi) => {
+    elements[bi]['rect'] = be.getBoundingClientRect()
+    const curEl =  document.getElementById(elements[bi].el.id)
+    be.childNodes.forEach((ce, ci) => {
+      if(!elements[bi].cardsRect) {
+        elements[bi].cardsRect = []
+        elements[bi].cardsRect.push(ce.getBoundingClientRect())
+      } else {
+        elements[bi].cardsRect.push(ce.getBoundingClientRect())
+      }
     })
-    PerdanaDnDMultipleData.baseTop = PerdanaDnDMultipleData.elements[0]['cardsRect'][0].y
+
+    if(be.childNodes.length == 0) return;
+    
+    const {y: lastCardY, height: lastCardHeight} = elements[bi].cardsRect[elements[bi].cardsRect.length-1];
+    if(elements[bi].rect.height < lastCardY+lastCardHeight && be.childNodes.length > 0) {
+      const cardLength = elements[bi].cardsRect.length;
+      const totalHeight = (lastCardHeight * cardLength + ((cardLength-1) * gap)) + (padding/2)
+      curEl.style.height = `${totalHeight}px`
+    } else {
+      document.getElementById(elements[bi].el.id).style.height = `${height}`
+    }
+
+  })
+  baseTop = elements[0].rect.y+(padding/2)
 }
 
 init({

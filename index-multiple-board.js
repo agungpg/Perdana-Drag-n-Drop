@@ -150,8 +150,11 @@ function onCardDrop() {
         endCardIndex
       } = findEndIndex({x, y, width})
 
+      if(endBoardIndex < 0){
+        dropCardToTheOriginalPlace()
+      }
       // drop card in the same board
-      if(endBoardIndex == PerdanaDnDMultipleData.startBoardIndex) {
+      else if(endBoardIndex == PerdanaDnDMultipleData.startBoardIndex) {
         dropCardInTheSameBoard(endBoardIndex, endCardIndex, height)
       } else if(endBoardIndex != PerdanaDnDMultipleData.startBoardIndex) {
         // move card with animation
@@ -200,7 +203,7 @@ function moveCardToAnotherBoard(endBoardIndex, endCardIndex, height) {
 }
 
 function findEndIndex({x, y, width}){
-  let endBoardIndex = PerdanaDnDMultipleData.startBoardIndex;
+  let endBoardIndex =  -1
   let endCardIndex = PerdanaDnDMultipleData.startCardIndex;
 
   for (let bIndex = 0; bIndex < PerdanaDnDMultipleData.elements.length; bIndex++) {
@@ -223,36 +226,55 @@ function findEndIndex({x, y, width}){
   }
 }
 
+function placeTheCard(card, top, left) {
+  if(top) card.style.top = `${top}px`
+  if(left) card.style.left = `${left}px`
+}
+
+function dropCardToTheOriginalPlace() {
+  const {elements, startBoardIndex, startCardIndex, cardActiveElement} = PerdanaDnDMultipleData;
+  placeTheCard(cardActiveElement, elements[startBoardIndex].cardsRect[startCardIndex].top, elements[startBoardIndex].cardsRect[startCardIndex].left)
+}
+
 function dropCardInTheSameBoard(endBoardIndex, endCardIndex, height){
-  const cardsLength = PerdanaDnDMultipleData.elements[endBoardIndex].cards.length
-  PerdanaDnDMultipleData.cardActiveElement.style.top = `${PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cardsRect[PerdanaDnDMultipleData.startCardIndex].y-PerdanaDnDMultipleData.boarderStyles.gap/2}px`
-  PerdanaDnDMultipleData.cardActiveElement.style.left = `${PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cardsRect[PerdanaDnDMultipleData.startCardIndex].x-PerdanaDnDMultipleData.elements[0].rect.x}px`
+  const {startCardIndex, elements, boarderStyles, cardActiveElement} = PerdanaDnDMultipleData;
+  const cardsLength = elements[endBoardIndex].cards.length
 
-  if(endCardIndex+1 == PerdanaDnDMultipleData.startCardIndex) return;
+  if(endCardIndex+1 == startCardIndex) return;
 
-  if(endCardIndex+1 > PerdanaDnDMultipleData.startCardIndex) {
-    for (let index = PerdanaDnDMultipleData.startCardIndex; index < endCardIndex; index++) {
-      const cardRect = PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[index];
-      const card = PerdanaDnDMultipleData.elements[endBoardIndex].cards[index+1];
-
-      document.getElementById(card.id).style.top = `${cardRect.top-PerdanaDnDMultipleData.boarderStyles.gap/2}px`
+  if(endCardIndex+1 > startCardIndex) {
+    for (let index = startCardIndex; index < endCardIndex; index++) {
+      // swap lower to higher card
+      placeTheCard(
+        document.getElementById(elements[endBoardIndex].cards[index+1].id),
+        elements[endBoardIndex].cardsRect[index].top-boarderStyles.gap/2
+      )
     }
-    document.getElementById(PerdanaDnDMultipleData.cardActiveElement.id).style.top = `${PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[endCardIndex].top-PerdanaDnDMultipleData.boarderStyles.gap/2}px`
+    // swap the active card to the destination
+    placeTheCard(
+      document.getElementById(cardActiveElement.id),
+      elements[endBoardIndex].cardsRect[endCardIndex].top-boarderStyles.gap/2
+    )
 
-    restructureData(endBoardIndex, endCardIndex-1)
-  } else if(endCardIndex+1 < PerdanaDnDMultipleData.startCardIndex) {
+    restructureData(endBoardIndex, endCardIndex)
+  } else if(endCardIndex+1 < startCardIndex) {
+    console.log("kedua")
     for (let index = cardsLength-2; index > endCardIndex; index--) {
-      const cardRect = PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[index];
-      const card = PerdanaDnDMultipleData.elements[endBoardIndex].cards[index];
-
-      document.getElementById(card.id).style.top = `${cardRect.top+height+PerdanaDnDMultipleData.boarderStyles.gap/2}px`
-      if(index == endCardIndex+1){
-        document.getElementById(PerdanaDnDMultipleData.cardActiveElement.id).style.top = `${PerdanaDnDMultipleData.elements[endBoardIndex].cardsRect[index-1].top+height+PerdanaDnDMultipleData.boarderStyles.gap/2}px`
-      }
+      // swap higher to lower card
+      placeTheCard(
+        document.getElementById(elements[endBoardIndex].cards[index].id),
+        elements[endBoardIndex].cardsRect[index].top+height+boarderStyles.gap/2
+      )
     }
+    // swap the active card to the destination
+    placeTheCard(
+      document.getElementById(cardActiveElement.id),
+      elements[endBoardIndex].cardsRect[endCardIndex].top+height+boarderStyles.gap/2
+    )
     restructureData(endBoardIndex, endCardIndex+1)
   }
 }
+
 function restructureData(endBoardIndex, endCardIndex) {
   console.log("restructureData: ", {endBoardIndex, endCardIndex})
     // restructure data

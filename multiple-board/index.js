@@ -276,7 +276,6 @@ function dropCardInTheSameBoard(endBoardIndex, endCardIndex, height){
 }
 
 function restructureData(endBoardIndex, endCardIndex) {
-  console.log("restructureData: ", {endBoardIndex, endCardIndex})
     // restructure data
     const dataMove = PerdanaDnDMultipleData.data[PerdanaDnDMultipleData.startBoardIndex].data.splice(PerdanaDnDMultipleData.startCardIndex, 1)
     const cardElMove = PerdanaDnDMultipleData.elements[PerdanaDnDMultipleData.startBoardIndex].cards.splice(PerdanaDnDMultipleData.startCardIndex, 1)
@@ -431,6 +430,36 @@ init({
         id: "item-3-2",
         title: "Item 3 2",
         description: "Board 3 Item 2",
+      }
+    ]
+    },
+    {
+      id: "board-4",
+      data: [
+      {
+        id: "item-4-1",
+        title: "Item 4 1",
+        description: "Board 4 Item 1",
+      },
+      {
+        id: "item-4-2",
+        title: "Item 4 2",
+        description: "Board 4 Item 2",
+      }
+    ]
+    },
+    {
+      id: "board-5",
+      data: [
+      {
+        id: "item-5-1",
+        title: "Item 5 1",
+        description: "Board 5 Item 1",
+      },
+      {
+        id: "item-5-2",
+        title: "Item 5 2",
+        description: "Board 5 Item 2",
       }
     ]
     }

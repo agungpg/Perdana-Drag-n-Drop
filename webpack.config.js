@@ -11,19 +11,8 @@ module.exports = {
     filename: '[name].[contenthash].js',
     clean: true,
     assetModuleFilename: '[name][ext]',
-    library: 'PerdanaDnD', // Expose as a global variable
-    libraryTarget: 'var', // Attach to `window` as a variable
-  },
-  devtool: 'source-map',
-  devServer: {
-    static: {
-      directory: path.resolve(__dirname, 'dist'),
-    },
-    port: 3000,
-    open: true,
-    hot: true,
-    compress: true,
-    historyApiFallback: true,
+    library: 'PerdanaDnD', 
+    libraryTarget: 'var',
   },
   module: {
     rules: [
@@ -35,9 +24,10 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: "Webpack App",
-      filename: "index.html",
+      filename: "example/index.html",
       template: "src/index.html",
     })
   ],
 };
+
+

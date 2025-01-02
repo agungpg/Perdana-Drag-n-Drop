@@ -8,8 +8,8 @@ var cardActive = undefined;
 var cardActiveIndex = -1;
 var baseTop = 0;
 var cardGap = 0;
-var onDragStartFn = undefined;
-var onDragEndFn = undefined;
+var onDragStartCb = undefined;
+var onDragEndCb = undefined;
 var list = [];
 
 function createContainer({ id, width, height, padding }) {
@@ -84,8 +84,8 @@ function init({
   onDragEnd,
 }) {
   cardGap = gap;
-  onDragStartFn = onDragStart;
-  onDragEndFn = onDragEnd;
+  onDragStartCb = onDragStart;
+  onDragEndCb = onDragEnd;
   list = data;
   createContainer({ id, width, height, padding });
   data.forEach((item, index) => {
@@ -103,7 +103,7 @@ function initFunc() {
   cards.forEach((ce, ci) => {
     ce.addEventListener("mousedown", () => {
       cardActiveIndex = parseInt(ce.dataset.index);
-      if (onDragStartFn) onDragStartFn(cardActiveIndex);
+      if (onDragStartCb) onDragStartCb(cardActiveIndex);
       cardActive = ce;
     });
   });
@@ -171,8 +171,8 @@ function initFunc() {
           indexMoveCards[indexMoveCards.length - 1],
           list
         );
-        if (onDragEndFn)
-          onDragEndFn(
+        if (onDragEndCb)
+          onDragEndCb(
             cardActiveIndex,
             indexMoveCards[indexMoveCards.length - 1],
             list
@@ -215,8 +215,8 @@ function initFunc() {
           cardActiveIndex - indexMoveCards.length,
           list
         );
-        if (onDragEndFn)
-          onDragEndFn(
+        if (onDragEndCb)
+          onDragEndCb(
             cardActiveIndex,
             cardActiveIndex - indexMoveCards.length,
             list
@@ -268,44 +268,4 @@ function setBouding() {
   }, 10);
 }
 
-// init({
-//   id: "container",
-//   width: "300px",
-//   height: "600px",
-//   padding: 20,
-//   gap: 12,
-//   onDragStart:(cardIndex) => {
-//     console.log("onDragStart: ",cardIndex)
-//   },
-//   onDragEnd:(startIndex, endIndex, data) => {
-//     console.log("onDragStart: ", {startIndex, endIndex, data})
-//   },
-//   data:  [
-//         {
-//           id: "item-1",
-//           title: "Item 1",
-//           description: "Board 1 Item 1",
-//         },
-//         {
-//           id: "item-2",
-//           title: "Item 2",
-//           description: "Board 1 Item 2",
-//         },
-//         {
-//           id: "item-3",
-//           title: "Item 3",
-//           description: "Board 1 Item 3",
-//         },
-//         {
-//           id: "item-4",
-//           title: "Item 4",
-//           description: "Board 1 Item 4",
-//         },
-//         {
-//           id: "item-5",
-//           title: "Item 5",
-//           description: "Board 1 Item 5",
-//         }
-//       ]
-// })
 export { init };

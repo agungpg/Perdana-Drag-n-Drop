@@ -28,7 +28,7 @@ function createCard({ id, title, description, index, gap }) {
   );
   const top = index * 106 + (index + 1) * gap;
   cardEl.style.top = `${top}px`;
-  
+
   const titleEl = createElement("h6", `${id}-title`, "m-pg-card-title");
   titleEl.innerHTML = title;
 
@@ -45,46 +45,51 @@ function createCard({ id, title, description, index, gap }) {
   return cardEl;
 }
 
+function createBoard(bdata, bIndex, isFirstRender) {
+  const board = createElement(
+    "div",
+    `${bdata.id}-board`,
+    PerdanaDnDMultipleData.boardClassName
+  );
+  if (PerdanaDnDMultipleData.boarderStyles.width)
+    board.style.width = PerdanaDnDMultipleData.boarderStyles.width;
+  if (PerdanaDnDMultipleData.boarderStyles.height)
+    board.style.height = PerdanaDnDMultipleData.boarderStyles.height;
+  if (PerdanaDnDMultipleData.boarderStyles.gap)
+    board.style.gap = `${PerdanaDnDMultipleData.boarderStyles.gap}px`;
+  if (PerdanaDnDMultipleData.boarderStyles.padding)
+    board.style.padding = `${PerdanaDnDMultipleData.boarderStyles.padding}px`;
+  board.setAttribute("data-index", `${bIndex}`);
+
+  const cards = [];
+  bdata.data.forEach((cdata, index) => {
+    const card = createCard({
+      ...cdata,
+      gap: PerdanaDnDMultipleData.boarderStyles.gap,
+      index,
+    });
+    board.append(card);
+    card.setAttribute("data-index", `${bIndex}-${index}`);
+    cards.push(card);
+  });
+
+  PerdanaDnDMultipleData.container.append(board);
+  if (isFirstRender) {
+    PerdanaDnDMultipleData.elements.push({
+      id: bdata.id,
+      el: board,
+      cards: cards,
+    });
+  }
+}
 function createBoards(multipleData) {
   const isFirstRender = PerdanaDnDMultipleData.elements.length == 0;
-  multipleData.forEach((bdata, bIndex) => {
-    const board = createElement(
-      "div",
-      `${bdata.id}-board`,
-      PerdanaDnDMultipleData.boardClassName
-    );
-    if (PerdanaDnDMultipleData.boarderStyles.width)
-      board.style.width = PerdanaDnDMultipleData.boarderStyles.width;
-    if (PerdanaDnDMultipleData.boarderStyles.height)
-      board.style.height = PerdanaDnDMultipleData.boarderStyles.height;
-    if (PerdanaDnDMultipleData.boarderStyles.gap)
-      board.style.gap = `${PerdanaDnDMultipleData.boarderStyles.gap}px`;
-    if (PerdanaDnDMultipleData.boarderStyles.padding)
-      board.style.padding = `${PerdanaDnDMultipleData.boarderStyles.padding}px`;
-    const cards = [];
-    bdata.data.forEach((cdata, index) => {
-      const card = createCard({
-        ...cdata,
-        gap: PerdanaDnDMultipleData.boarderStyles.gap,
-        index,
-      });
-      board.append(card);
-      card.setAttribute("data-index", `${bIndex}-${index}`);
-      cards.push(card);
-    });
-    PerdanaDnDMultipleData.container.append(board);
-    board.setAttribute("data-index", `${bIndex}`);
-    if (isFirstRender) {
-      PerdanaDnDMultipleData.elements.push({
-        id: bdata.id,
-        el: board,
-        cards: cards,
-      });
-    }
-  });
+  multipleData.forEach((data, index) =>
+    createBoard(data, index, isFirstRender)
+  );
 }
 
-function setBoundingRect() {
+function setBoundingRect(boardIndexes) {
   const { gap, height, padding } = PerdanaDnDMultipleData.boarderStyles;
   let { elements, baseTop } = PerdanaDnDMultipleData;
 
@@ -119,4 +124,43 @@ function setBoundingRect() {
   baseTop = elements[0].rect.y + padding / 2;
 }
 
-export { createContainer, createBoards, setBoundingRect };
+function reRenderBoards(boardIndexes) {
+  PerdanaDnDMultipleData.data.forEach((bdata, bIndex) => {
+    if (!boardIndexes.includes(bIndex)) return;
+    const board = createElement(
+      "div",
+      `${bdata.id}-board`,
+      PerdanaDnDMultipleData.boardClassName
+    );
+    if (PerdanaDnDMultipleData.boarderStyles.width)
+      board.style.width = PerdanaDnDMultipleData.boarderStyles.width;
+    if (PerdanaDnDMultipleData.boarderStyles.height)
+      board.style.height = PerdanaDnDMultipleData.boarderStyles.height;
+    if (PerdanaDnDMultipleData.boarderStyles.gap)
+      board.style.gap = `${PerdanaDnDMultipleData.boarderStyles.gap}px`;
+    if (PerdanaDnDMultipleData.boarderStyles.padding)
+      board.style.padding = `${PerdanaDnDMultipleData.boarderStyles.padding}px`;
+    board.setAttribute("data-index", `${bIndex}`);
+
+    const cards = [];
+    bdata.data.forEach((cdata, index) => {
+      const card = createCard({
+        ...cdata,
+        gap: PerdanaDnDMultipleData.boarderStyles.gap,
+        index,
+      });
+      card.setAttribute("data-index", `${bIndex}-${index}`);
+      cards.push(card);
+
+      board.append(card);
+    });
+    PerdanaDnDMultipleData.container.children[bIndex].remove();
+    if (bIndex > 0) {
+      PerdanaDnDMultipleData.container.children[bIndex - 1].after(board);
+    } else {
+      PerdanaDnDMultipleData.container.children[bIndex].before(board);
+    }
+  });
+}
+
+export { createContainer, createBoards, setBoundingRect, reRenderBoards };

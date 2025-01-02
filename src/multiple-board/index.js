@@ -13,8 +13,8 @@ export const PerdanaDnDMultipleData = {
   startBoardIndex: -1,
   startCardIndex: -1,
   baseTop: 0,
-  onDragStartFn: undefined,
-  onDragEndFn: undefined,
+  onDragStartCb: undefined,
+  onDragEndCb: undefined,
   boarderStyles: undefined,
   cardStyle: undefined,
   lastY: 0,
@@ -32,8 +32,8 @@ function init({
   onDragEnd,
   boarderStyles,
 }) {
-  PerdanaDnDMultipleData.onDragStartFn = onDragStart;
-  PerdanaDnDMultipleData.onDragEndFn = onDragEnd;
+  PerdanaDnDMultipleData.onDragStartCb = onDragStart;
+  PerdanaDnDMultipleData.onDragEndCb = onDragEnd;
   PerdanaDnDMultipleData.data = multipleData;
   PerdanaDnDMultipleData.boarderStyles = boarderStyles;
 

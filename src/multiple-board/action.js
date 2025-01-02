@@ -1,5 +1,5 @@
 import { PerdanaDnDMultipleData } from "./index";
-import { createBoards, setBoundingRect } from "./element";
+import { createBoards, setBoundingRect, reRenderBoards } from "./element";
 function initListener() {
   document.querySelectorAll(".m-pg-board").forEach((be, bi) => {
     be.childNodes.forEach((ce, ci) => {
@@ -9,23 +9,25 @@ function initListener() {
   PerdanaDnDMultipleData.container.addEventListener("mousemove", onCardMove);
   PerdanaDnDMultipleData.container.addEventListener("mouseup", onCardDrop);
 }
-
+var timeoutDrag = undefined
 function onCardDrag(ce) {
-  PerdanaDnDMultipleData.isDraging = true;
-  const [boardIndex, cardIndex] = ce.dataset.index.split("-");
-  PerdanaDnDMultipleData.startBoardIndex = parseInt(boardIndex);
-  PerdanaDnDMultipleData.startCardIndex = parseInt(cardIndex);
-
-  if (PerdanaDnDMultipleData.onDragStartFn)
-    PerdanaDnDMultipleData.onDragStartFn(boardIndex, cardIndex);
-
-  PerdanaDnDMultipleData.cardActiveElement = ce;
-  if (PerdanaDnDMultipleData.cardActiveElement)
-    PerdanaDnDMultipleData.cardActiveElement.classList.add("m-pg-card-active");
-
-  const top = ce.clientY - PerdanaDnDMultipleData.baseTop;
-  PerdanaDnDMultipleData.lastY = top;
-  PerdanaDnDMultipleData.lastX = ce.clientX;
+  timeoutDrag = setTimeout(() => {
+    PerdanaDnDMultipleData.isDraging = true;
+    const [boardIndex, cardIndex] = ce.dataset.index.split("-");
+    PerdanaDnDMultipleData.startBoardIndex = parseInt(boardIndex);
+    PerdanaDnDMultipleData.startCardIndex = parseInt(cardIndex);
+  
+    if (PerdanaDnDMultipleData.onDragStartCb)
+      PerdanaDnDMultipleData.onDragStartCb(boardIndex, cardIndex);
+  
+    PerdanaDnDMultipleData.cardActiveElement = ce;
+    if (PerdanaDnDMultipleData.cardActiveElement)
+      PerdanaDnDMultipleData.cardActiveElement.classList.add("m-pg-card-active");
+  
+    const top = ce.clientY - PerdanaDnDMultipleData.baseTop;
+    PerdanaDnDMultipleData.lastY = top;
+    PerdanaDnDMultipleData.lastX = ce.clientX;
+  }, 200)
 }
 
 function onCardMove(e) {
@@ -65,6 +67,7 @@ function onCardMove(e) {
 }
 
 function onCardDrop() {
+  clearTimeout(timeoutDrag)
   PerdanaDnDMultipleData.isDraging = false;
   if (PerdanaDnDMultipleData.cardActiveElement) {
     const { x, y, width, height } =
@@ -73,7 +76,7 @@ function onCardDrop() {
     const { endBoardIndex, endCardIndex } = findEndIndex({ x, y, width });
 
     if (endBoardIndex < 0) {
-      dropCardToTheOriginalPlace();
+      dropCardToItsOriginalPlace();
     }
     // drop card in the same board
     else if (endBoardIndex == PerdanaDnDMultipleData.startBoardIndex) {
@@ -85,20 +88,26 @@ function onCardDrop() {
       restructureData(endBoardIndex, endCardIndex + 1);
     }
 
-    //relayout element
+    // relayout element
     setTimeout(() => {
       PerdanaDnDMultipleData.elements.forEach((b, index) => {
         PerdanaDnDMultipleData.elements[index]["rect"] = [];
         PerdanaDnDMultipleData.elements[index]["cardsRect"] = [];
       });
+      // const boardIndexes = [PerdanaDnDMultipleData.startBoardIndex];
+      // if (endBoardIndex) boardIndexes.push(endBoardIndex);
+
       document.querySelectorAll(".m-pg-board").forEach((e) => e.remove());
       createBoards(PerdanaDnDMultipleData.data);
+
+      // reRenderBoards(boardIndexes);
       setBoundingRect();
       initListener();
-    }, 100);
+    }, 120);
+
     //end relayout element
-    if (PerdanaDnDMultipleData.onDragEndFn)
-      PerdanaDnDMultipleData.onDragEndFn(
+    if (PerdanaDnDMultipleData.onDragEndCb)
+      PerdanaDnDMultipleData.onDragEndCb(
         PerdanaDnDMultipleData.startCardIndex,
         PerdanaDnDMultipleData.startBoardIndex,
         endCardIndex + 1,
@@ -181,15 +190,20 @@ function findEndIndex({ x, y, width }) {
 function placeTheCard(card, top, left) {
   if (top) card.style.top = `${top}px`;
   if (left) card.style.left = `${left}px`;
+  if (top) card.top = `${top}px`;
+  if (left) card.left = `${left}px`;
 }
 
-function dropCardToTheOriginalPlace() {
+function dropCardToItsOriginalPlace() {
   const { elements, startBoardIndex, startCardIndex, cardActiveElement } =
     PerdanaDnDMultipleData;
+    console.log({top: elements[startBoardIndex].cardsRect[startCardIndex].top,
+      left: elements[startBoardIndex].cardsRect[startCardIndex].left, rect: elements[startBoardIndex], curRect: cardActiveElement.getBoundingClientRect(), diff: elements[startBoardIndex].cardsRect[startCardIndex].left - cardActiveElement.getBoundingClientRect().left})
+  
   placeTheCard(
     cardActiveElement,
     elements[startBoardIndex].cardsRect[startCardIndex].top,
-    elements[startBoardIndex].cardsRect[startCardIndex].left
+    elements[startBoardIndex].cardsRect[startCardIndex].left 
   );
 }
 
@@ -217,7 +231,6 @@ function dropCardInTheSameBoard(endBoardIndex, endCardIndex, height) {
 
     restructureData(endBoardIndex, endCardIndex);
   } else if (endCardIndex + 1 < startCardIndex) {
-    console.log("kedua");
     for (let index = cardsLength - 2; index > endCardIndex; index--) {
       // swap higher to lower card
       placeTheCard(
@@ -265,4 +278,5 @@ function resetActiveVariable() {
   PerdanaDnDMultipleData.startBoardIndex = -1;
   PerdanaDnDMultipleData.cardActiveElement = undefined;
 }
+
 export { initListener };

@@ -197,11 +197,9 @@ function placeTheCard(card, top, left) {
 function dropCardToItsOriginalPlace() {
   const { elements, startBoardIndex, startCardIndex, cardActiveElement } =
     PerdanaDnDMultipleData;
-    console.log({top: elements[startBoardIndex].cardsRect[startCardIndex].top,
-      left: elements[startBoardIndex].cardsRect[startCardIndex].left, rect: elements[startBoardIndex], curRect: cardActiveElement.getBoundingClientRect(), diff: elements[startBoardIndex].cardsRect[startCardIndex].left - cardActiveElement.getBoundingClientRect().left})
   
   placeTheCard(
-    cardActiveElement,
+    elements[startBoardIndex].cards[startCardIndex],
     elements[startBoardIndex].cardsRect[startCardIndex].top,
     elements[startBoardIndex].cardsRect[startCardIndex].left 
   );

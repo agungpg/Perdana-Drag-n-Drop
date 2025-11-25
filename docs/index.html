@@ -4,15 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Perdana Drag-n-Drop | API</title>
-  <link
-    id="hljs-theme"
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"
-    integrity="sha512-yOANMRHkRkNvztNFVQVw1Gc7YCOUMIqFZ3VAb9YSEuxsjjlHzvEihQ/HVbUaz2QmiVjCwXTlzAIXazhbugzuZg=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
   <style>
+    html { scroll-behavior: smooth; }
     :root {
       --bg: #0f172a;
       --panel: #0b1225;
@@ -68,15 +61,29 @@
       line-height: 1.6;
     }
     header {
-      padding: 44px 28px 20px;
+      padding: 48px 28px 24px;
       text-align: center;
+      position: relative;
     }
     .header-actions {
       display: flex;
-      justify-content: center;
       align-items: center;
-      gap: 14px;
-      margin-top: 18px;
+      justify-content: center;
+      gap: 16px;
+      margin: 22px auto 0;
+      padding: 12px 14px;
+      max-width: 1100px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+    .header-actions nav {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
     h1 {
       margin: 0 0 8px;
@@ -89,7 +96,7 @@
       color: var(--muted);
     }
     nav {
-      margin: 24px auto 6px;
+      margin: 0;
       display: flex;
       justify-content: center;
       gap: 12px;
@@ -131,6 +138,33 @@
     .theme-toggle:active {
       transform: translateY(0);
     }
+    .top-actions {
+      position: absolute;
+      top: 18px;
+      right: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 10;
+    }
+    .top-link {
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(125,211,252,0.12), rgba(168,85,247,0.1));
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 120ms ease, border-color 150ms ease;
+      box-shadow: var(--shadow);
+    }
+    .top-link:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+    }
+    .top-link:active {
+      transform: translateY(0);
+    }
     main {
       max-width: 1260px;
       margin: 28px auto 80px;
@@ -160,7 +194,7 @@
     }
     .two-col {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 18px;
     }
     .grid-2 {
@@ -170,10 +204,13 @@
     }
     .card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      /* border: 1px solid var(--border);
+      border-radius: 10px; */
       padding: 22px;
-      box-shadow: var(--shadow);
+      /* box-shadow: var(--shadow); */
+    }
+    .card.full {
+      grid-column: 1 / -1;
     }
     .card h3 {
       margin: 0 0 12px;
@@ -246,6 +283,7 @@
       h1 { font-size: 26px; }
       nav { gap: 8px; }
       .grid-2 { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -256,9 +294,34 @@
       Lightweight drag-and-drop for single lists and kanban-style multi-board layouts.
       Works with plain DOM, ships defaults, and exposes callbacks so you can persist changes.
     </p>
+    <div class="top-actions">
+      <a
+        class="top-link"
+        href="https://cdn.jsdelivr.net/gh/agungpg/Perdana-Drag-n-Drop/dist/bundle.js"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Download bundle.js"
+      >
+        ⬇️ Download
+      </a>
+      <a
+        class="top-link"
+        href="https://github.com/agungpg/Perdana-Drag-n-Drop"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="View GitHub repository"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false" style="vertical-align: middle;">
+          <path fill="currentColor" d="M8 .2C3.58.2.2 3.58.2 8c0 3.44 2.23 6.35 5.32 7.38.39.08.53-.17.53-.38 0-.19-.01-.82-.01-1.49-1.94.35-2.44-.47-2.6-.9-.09-.23-.48-.9-.82-1.08-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.72-.2-3.53-.86-3.53-3.82 0-.85.3-1.55.82-2.1-.08-.2-.36-1.02.08-2.12 0 0 .65-.21 2.13.82a7.42 7.42 0 0 1 3.88 0c1.48-1.04 2.13-.82 2.13-.82.44 1.1.16 1.92.08 2.12.52.55.82 1.25.82 2.1 0 2.97-1.81 3.62-3.54 3.81.29.25.54.74.54 1.5 0 1.08-.01 1.95-.01 2.21 0 .21.14.46.53.38A7.82 7.82 0 0 0 15.8 8C15.8 3.58 12.42.2 8 .2Z"/>
+        </svg>
+        <span style="margin-left: 6px;">GitHub</span>
+      </a>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">Switch to Light</button>
+    </div>
     <div class="header-actions">
       <nav>
-        <a href="#install">Install</a>
+        <a href="#download">Download</a>
+        <a href="#install">Use in browser</a>
         <a href="#bundle">Bundle & global</a>
         <a href="#single">Single board API</a>
         <a href="#multiple">Multiple board API</a>
@@ -266,27 +329,23 @@
         <a href="#styling">Styling hooks</a>
         <a href="#lifecycle">Lifecycle</a>
       </nav>
-      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">Switch to Light</button>
     </div>
   </header>
 
   <main>
     <section id="install">
-      <header><h2>Install & build</h2></header>
-      <div class="section-body two-col">
+      <header><h2>Use in the browser</h2></header>
+      <div class="section-body">
         <div class="card">
-          <h3>From source</h3>
-          <pre><code class="language-bash">npm install
-npm run build</code></pre>
-          <p class="muted">Build emits <code>dist/bundle.[hash].js</code> and regenerates <code>dist/example/index.html</code>.</p>
-        </div>
-        <div class="card">
-          <h3>Use in the browser</h3>
-          <pre><code class="language-html">&lt;script src="./bundle.[hash].js"&gt;&lt;/script&gt;
+          <h3>Plain JavaScript (CDN)</h3>
+          <p class="muted">Include the CDN bundle, then grab the global <code>PerdanaDnD</code> and initialize <code>single</code> or <code>multiple</code>.</p>
+          <pre><code class="language-html">&lt;script src="https://cdn.jsdelivr.net/gh/agungpg/Perdana-Drag-n-Drop/dist/bundle.js"&gt;&lt;/script&gt;
 &lt;script&gt;
   const { single, multiple } = window.PerdanaDnD;
+  single.init({ id: "container", width: "320px", height: "640px", gap: 12, data: [] });
+  // multiple.init({ id: "container", gap: 12, multipleData: [...] });
 &lt;/script&gt;</code></pre>
-          <p class="muted">Bundle registers a <code>PerdanaDnD</code> global with <code>single</code> and <code>multiple</code> namespaces.</p>
+          <p class="muted">No npm required: load the script, then pass your config to the desired initializer.</p>
         </div>
       </div>
     </section>
@@ -341,6 +400,18 @@ npm run build</code></pre>
               <li><code>onDragEnd(startIndex, endIndex, updatedData)</code>: Fired after drop.</li>
             </ul>
             <p class="muted">Cards are re-ordered in-place and re-rendered with maintained top positions.</p>
+          </div>
+          <div class="card full">
+            <h3>Demo</h3>
+            <p class="muted">See a live example of the single-list drag-and-drop experience on CodePen.</p>
+            <a
+              class="cta-button"
+              href="https://codepen.io/Agung-perdana-gumelar-the-bold/pen/WbwdBrd"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              🎬 View single board demo
+            </a>
           </div>
         </div>
       </div>
@@ -488,7 +559,7 @@ npm run build</code></pre>
       function applyTheme(theme) {
         const isLight = theme === "light";
         body.classList.toggle("theme-light", isLight);
-        toggleBtn.textContent = isLight ? "Switch to Dark" : "Switch to Light";
+        toggleBtn.innerHTML = isLight ? "🌙 Switch to Dark" : "☀️ Switch to Light";
         toggleBtn.setAttribute("aria-pressed", isLight ? "true" : "false");
         localStorage.setItem(THEME_KEY, theme);
         if (themeLink) {
@@ -511,33 +582,6 @@ npm run build</code></pre>
       }
     });
   </script>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
-    integrity="sha512-zlq+Z1urk3sAAgAsvz4IfW05Ys6VClCDYn8/EV3DGgWvOmq++jy5o+BSGIEzF0Ks/vnkK5IVbP2XZEBy+3wWJg=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-    defer
-  ></script>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"
-    integrity="sha512-OHUypkfIkSX7FX+0X3+eiNYiC6K8bmwlnzEmM/INxkscfCiX2JT0RY9omLDqdO+PqfBEog40QFeqdpXDSeB2HQ=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-    defer
-  ></script>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"
-    integrity="sha512-L6yDt/Au01qrUBsZjzvTE40UyHdtghWMyKuYc56MLYWcA2bdb8O0lOCivJyELH7r5S8AlOlKxE+SpFaA0ZUKeg=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-    defer
-  ></script>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"
-    integrity="sha512-Zc4HqP/qqDvQ4Fyj30l1X788nR3M7PKXVAWQFZetufqEKwJVkJdY8SdP0GUoES/AE0sYO6mibEUgtqY+z9JGeQ=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-    defer
-  ></script>
+
 </body>
 </html>

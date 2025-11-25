@@ -1,271 +1,199 @@
-import "./styles.css"
-var CONTAINER_EL = undefined;
+import "./styles.css";
+
 const containerClassName = "pg-board-container";
-var cardsBounding = [];
-var cards = [];
-var isDrag = false;
-var cardActive = undefined;
-var cardActiveIndex = -1;
-var baseTop = 0;
-var cardGap = 0;
-var onDragStartCb = undefined;
-var onDragEndCb = undefined;
-var list = [];
 
-function createContainer({ id, width, height, padding }) {
-  CONTAINER_EL = document.getElementById(id);
-  if (!CONTAINER_EL) throw new Error(`Element with ${id} is not available!`);
-  CONTAINER_EL.classList.add(containerClassName);
-  CONTAINER_EL.style.width = width;
-  CONTAINER_EL.style.height = height;
-  if (padding) CONTAINER_EL.style.padding = `${padding}px`;
-}
+class SingleBoard {
+  constructor({
+    id,
+    gap = 0,
+    width,
+    height,
+    padding,
+    data = [],
+    onDragStart,
+    onDragEnd,
+  }) {
+    this.container = this.getContainer(id);
+    this.gap = gap;
+    this.data = [...data];
+    this.callbacks = { onDragStart, onDragEnd };
 
-function createElement(tag, id, className) {
-  const newEl = document.createElement(tag);
-  if (id) newEl.id = id;
-  if (className) newEl.classList.add(className);
-  return newEl;
-}
+    this.cards = [];
+    this.cardHeight = 0;
+    this.isDragging = false;
+    this.active = { card: null, index: -1, startY: 0, startTop: 0 };
 
-function createCard({ id, title, description, index, gap }) {
-  const cardEl = createElement("div", `${id}-board-item-container`, "pg-card");
-  const top = index * 106 + (index + 1) * gap;
-  cardEl.style.top = `${top}px`;
+    this.applyContainerStyles({ width, height, padding });
+    this.renderCards();
+    this.bindContainerEvents();
+    this.measureLayout();
+  }
 
-  const titleEl = createElement("h6", `${id}-title`, "pg-card-title");
-  titleEl.innerHTML = title;
+  getContainer(id) {
+    const container = document.getElementById(id);
+    if (!container) throw new Error(`Element with ${id} is not available!`);
+    return container;
+  }
 
-  const descriptionEl = createElement(
-    "p",
-    `${id}-title`,
-    "pg-board-description"
-  );
-  descriptionEl.innerHTML = description;
+  applyContainerStyles({ width, height, padding }) {
+    this.container.classList.add(containerClassName);
+    if (width) this.container.style.width = width;
+    if (height) this.container.style.height = height;
+    if (padding !== undefined) this.container.style.padding = `${padding}px`;
+  }
 
-  cardEl.append(titleEl);
-  cardEl.append(descriptionEl);
+  renderCards() {
+    this.container.innerHTML = "";
+    this.cards = this.data.map((item, index) => this.createCard(item, index));
+    if (this.cards.length && !this.cardHeight) {
+      this.cardHeight = this.cards[0].getBoundingClientRect().height;
+    }
+    if (this.cardHeight) this.positionCards();
+  }
 
-  return cardEl;
+  createCard({ id, title, description }, index) {
+    const cardEl = document.createElement("div");
+    cardEl.id = `${id}-board-item-container`;
+    cardEl.classList.add("pg-card");
+    cardEl.dataset.index = index;
+
+    const titleEl = document.createElement("h6");
+    titleEl.id = `${id}-title`;
+    titleEl.classList.add("pg-card-title");
+    titleEl.innerHTML = title;
+
+    const descriptionEl = document.createElement("p");
+    descriptionEl.id = `${id}-description`;
+    descriptionEl.classList.add("pg-board-description");
+    descriptionEl.innerHTML = description;
+
+    cardEl.append(titleEl);
+    cardEl.append(descriptionEl);
+    cardEl.addEventListener("mousedown", (event) =>
+      this.handleCardMouseDown(event, cardEl)
+    );
+
+    this.container.append(cardEl);
+    return cardEl;
+  }
+
+  bindContainerEvents() {
+    this.boundMouseMove = this.handleContainerMouseMove.bind(this);
+    this.boundMouseUp = this.handleContainerMouseUp.bind(this);
+    this.container.addEventListener("mousemove", this.boundMouseMove);
+    this.container.addEventListener("mouseup", this.boundMouseUp);
+    this.container.addEventListener("mouseleave", this.boundMouseUp);
+  }
+
+  measureLayout() {
+    requestAnimationFrame(() => {
+      if (!this.cards.length) return;
+      this.cardHeight = this.cards[0].getBoundingClientRect().height;
+      this.positionCards();
+    });
+  }
+
+  positionCards() {
+    this.cards.forEach((card, index) => {
+      card.dataset.index = index;
+      card.style.top = `${this.slotTop(index)}px`;
+    });
+  }
+
+  slotTop(index) {
+    return this.gap + index * (this.cardHeight + this.gap);
+  }
+
+  handleCardMouseDown(event, card) {
+    const index = Number(card.dataset.index);
+    this.isDragging = true;
+    this.active = {
+      card,
+      index,
+      startY: event.clientY,
+      startTop: this.parseTop(card.style.top),
+    };
+    card.classList.add("pg-card-active");
+    if (this.callbacks.onDragStart) this.callbacks.onDragStart(index);
+    event.preventDefault();
+  }
+
+  handleContainerMouseMove(event) {
+    if (!this.isDragging || !this.active.card) return;
+    const deltaY = event.clientY - this.active.startY;
+    const newTop = this.active.startTop + deltaY;
+    this.active.card.style.top = `${newTop}px`;
+  }
+
+  handleContainerMouseUp() {
+    if (!this.isDragging || !this.active.card) return;
+
+    const targetIndex = this.targetIndexFromPosition(this.active.card);
+    const startIndex = this.active.index;
+    this.isDragging = false;
+
+    if (startIndex !== targetIndex) {
+      this.reorder(startIndex, targetIndex);
+      if (this.callbacks.onDragEnd) {
+        this.callbacks.onDragEnd(startIndex, targetIndex, this.data);
+      }
+    } else {
+      this.active.card.style.top = `${this.slotTop(startIndex)}px`;
+    }
+
+    this.active.card.classList.remove("pg-card-active");
+    this.resetActive();
+  }
+
+  targetIndexFromPosition(card) {
+    const top = this.parseTop(card.style.top);
+    const slotHeight = this.cardHeight + this.gap;
+    if (slotHeight <= 0) return this.active.index;
+    const relativeTop = Math.max(0, top - this.gap);
+    const projectedIndex = Math.round(relativeTop / slotHeight);
+    return this.clampIndex(projectedIndex);
+  }
+
+  reorder(startIndex, targetIndex) {
+    const [movedCard] = this.cards.splice(startIndex, 1);
+    this.cards.splice(targetIndex, 0, movedCard);
+
+    const [movedItem] = this.data.splice(startIndex, 1);
+    this.data.splice(targetIndex, 0, movedItem);
+
+    this.positionCards();
+  }
+
+  resetActive() {
+    this.active = { card: null, index: -1, startY: 0, startTop: 0 };
+  }
+
+  parseTop(value) {
+    const parsed = Number(String(value).replace("px", ""));
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  clampIndex(index) {
+    return Math.min(Math.max(index, 0), this.cards.length - 1);
+  }
 }
 
 /**
- * Initializes a draggable container with cards.
+ * Initializes a draggable board instance for the given container.
  *
- * @param {Object} config - Configuration object.
- * @param {string} config.id - The ID of the container element.
- * @param {number} config.gap - The gap (in pixels) between cards in the container.
- * @param {string} config.width - The CSS width style applied to the container element.
- * @param {string} config.height - The CSS height style applied to the container element.
- * @param {number} config.padding - The padding (in pixels) applied to the container element.
- * @param {Array<Object>} config.data - The list of card data objects used for drag-and-drop elements.
- * @param {string} config.data[].id - The unique ID of the card.
- * @param {string} config.data[].title - The title of the card.
- * @param {string} config.data[].description - The description of the card.
- * @param {Function} config.onDragStart - Callback triggered when a card starts being dragged.
- * @param {Function} config.onDragEnd - Callback triggered when a card ends being dragged.
- *
- * @callback onDragStart
- * @param {number} cardIndex - The index of the card that is being dragged.
- *
- * @callback onDragEnd
- * @param {number} startIndex - The initial index of the card being dragged.
- * @param {number} endIndex - The final index of the card after dropping.
- * @param {Array<Object>} updatedData - The updated list of card data.
+ * @param {Object} config
+ * @param {string} config.id - Element id for the container.
+ * @param {number} [config.gap] - Gap in pixels between cards.
+ * @param {string} [config.width] - Width applied to the container.
+ * @param {string} [config.height] - Height applied to the container.
+ * @param {number} [config.padding] - Padding (px) applied to the container.
+ * @param {Array<Object>} [config.data] - List of card data objects.
+ * @param {Function} [config.onDragStart] - Fired when a drag begins.
+ * @param {Function} [config.onDragEnd] - Fired when a drag completes.
+ * @returns {SingleBoard}
  */
-function init({
-  id,
-  gap,
-  width,
-  height,
-  padding,
-  data,
-  onDragStart,
-  onDragEnd,
-}) {
-  cardGap = gap;
-  onDragStartCb = onDragStart;
-  onDragEndCb = onDragEnd;
-  list = data;
-  createContainer({ id, width, height, padding });
-  data.forEach((item, index) => {
-    const cardEL = createCard({ ...item, index, gap });
-    cardEL.setAttribute("data-index", index);
-    CONTAINER_EL.append(cardEL);
-    cards.push(cardEL);
-  });
-  setBouding();
-  initFunc();
-}
-
-function initFunc() {
-  var lastY = 0;
-  cards.forEach((ce, ci) => {
-    ce.addEventListener("mousedown", () => {
-      cardActiveIndex = parseInt(ce.dataset.index);
-      if (onDragStartCb) onDragStartCb(cardActiveIndex);
-      cardActive = ce;
-    });
-  });
-
-  CONTAINER_EL.addEventListener("mousedown", (e) => {
-    // const baseTop = cardsBounding[0].y
-    isDrag = true;
-    const top = e.clientY - baseTop;
-    lastY = top;
-    if (cardActive) cardActive.classList.add("pg-card-active");
-    setTimeout(() => {
-      if (cardActive) cardActive.classList.add("pg-card-active");
-    }, 10);
-  });
-
-  CONTAINER_EL.addEventListener("mousemove", (e) => {
-    // const baseTop = cardsBounding[0].y
-    const top = e.clientY - baseTop;
-    if (isDrag && cardActive) {
-      if (lastY == 0) {
-        cards.forEach((c) => {
-          c.classList.add("no-copy");
-        });
-      }
-      const Y = parseInt(cardActive.style.top.replace("px", "")) + top - lastY;
-      cardActive.style.top = `${Y}px`;
-      lastY = top;
-    }
-  });
-
-  CONTAINER_EL.addEventListener("mouseup", (e) => {
-    isDrag = false;
-    if (cardActive) {
-      if (lastY + baseTop > cardsBounding[cardActiveIndex].y) {
-        const indexMoveCards = [];
-        cardsBounding.forEach((ce, ci) => {
-          if (
-            cardActive.getBoundingClientRect().y > ce.y &&
-            ci > cardActiveIndex
-          ) {
-            indexMoveCards.push(ci);
-          }
-        });
-        const cardTemp = cards[cardActiveIndex];
-        for (const index of indexMoveCards) {
-          cards[index].style.top = `${
-            cardsBounding[index - 1].y - baseTop + cardGap
-          }px`;
-          cards[index - 1] = cards[index];
-          cards[index].setAttribute(
-            "data-index",
-            parseInt(cards[index].dataset.index) - 1
-          );
-        }
-        if (indexMoveCards.length > 0) {
-          const idx = indexMoveCards[indexMoveCards.length - 1];
-          cards[idx] = cardTemp;
-          cardActive.style.top = `${
-            cardsBounding[idx].y - baseTop + cardGap
-          }px`;
-          cardActive.setAttribute("data-index", idx);
-        }
-        reOrderData(
-          cardActiveIndex,
-          indexMoveCards[indexMoveCards.length - 1],
-          list
-        );
-        if (onDragEndCb)
-          onDragEndCb(
-            cardActiveIndex,
-            indexMoveCards[indexMoveCards.length - 1],
-            list
-          );
-      } else if (lastY + baseTop < cardsBounding[cardActiveIndex].y) {
-        const indexMoveCards = [];
-        cardsBounding.forEach((ce, ci) => {
-          if (
-            cardActive.getBoundingClientRect().y +
-              cardActive.getBoundingClientRect().height <
-              ce.y + ce.height &&
-            ci < cardActiveIndex
-          ) {
-            indexMoveCards.push(ci);
-          }
-        });
-
-        const cardTemp = cards[cardActiveIndex];
-        for (const index of indexMoveCards.reverse()) {
-          cards[index].style.top = `${
-            cardsBounding[index + 1].y - baseTop + cardGap
-          }px`;
-          cards[index + 1] = cards[index];
-          cards[index].setAttribute(
-            "data-index",
-            parseInt(cards[index].dataset.index) + 1
-          );
-        }
-        if (indexMoveCards.length > 0) {
-          const idx = cardActiveIndex - indexMoveCards.length;
-          cards[idx] = cardTemp;
-          cardActive.style.top = `${
-            cardsBounding[idx].y - baseTop + cardGap
-          }px`;
-          cardActive.setAttribute("data-index", idx);
-        }
-
-        reOrderData(
-          cardActiveIndex,
-          cardActiveIndex - indexMoveCards.length,
-          list
-        );
-        if (onDragEndCb)
-          onDragEndCb(
-            cardActiveIndex,
-            cardActiveIndex - indexMoveCards.length,
-            list
-          );
-      }
-      cardActive.classList.remove("pg-card-active");
-      cardActiveIndex = -1;
-      cardActive = undefined;
-    }
-    lastY = 0;
-  });
-}
-function reOrderData(startIndex, endIndex, data) {
-  if (startIndex > endIndex) {
-    const temp = data[endIndex];
-    data[endIndex] = data[startIndex];
-    for (let index = startIndex; index > endIndex; index--) {
-      if (index == endIndex + 1) {
-        data[index] = temp;
-        continue;
-      }
-      data[index] = data[index - 1];
-    }
-  }
-  if (startIndex < endIndex) {
-    const temp = data[endIndex];
-    data[endIndex] = data[startIndex];
-    if (endIndex - startIndex < 2) {
-      data[startIndex] = temp;
-      return;
-    }
-    for (let i = startIndex + 1; i <= endIndex; i++) {
-      if (i == endIndex) {
-        data[i - 1] = temp;
-        continue;
-      }
-
-      data[i - 1] = data[i];
-    }
-  }
-}
-
-function setBouding() {
-  setTimeout(() => {
-    cards.forEach((e) => {
-      cardsBounding.push(e.getBoundingClientRect());
-    });
-    baseTop = cardsBounding[0].y;
-  }, 10);
+function init(config) {
+  return new SingleBoard(config);
 }
 
 export { init };

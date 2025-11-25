@@ -7,9 +7,13 @@
     "build": "webpack --config webpack.config.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "agung perdana gumelar",
+  "license": "MIT",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agungpg/Perdana-Drag-n-Drop.git"
+  },
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",

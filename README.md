@@ -81,3 +81,6 @@ Include the built bundle and initialize either the single or multiple board modu
 - Source entry: `src/index.js` exports `single` and `multiple`.
 - Build with `npm run build`; output lands in `dist/`.
 - Edit `src/index.html` to change the demo; rebuilding regenerates `dist/example/index.html`.
+
+## License
+- MIT License © 2024 agung perdana gumelar. See `LICENSE` for details.

@@ -204,10 +204,10 @@
     }
     .card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      /* border: 1px solid var(--border);
+      border-radius: 10px; */
       padding: 22px;
-      box-shadow: var(--shadow);
+      /* box-shadow: var(--shadow); */
     }
     .card.full {
       grid-column: 1 / -1;
@@ -335,14 +335,17 @@
   <main>
     <section id="install">
       <header><h2>Use in the browser</h2></header>
-      <div class="section-body two-col">
+      <div class="section-body">
         <div class="card">
-          <h3>Plain JavaScript</h3>
+          <h3>Plain JavaScript (CDN)</h3>
+          <p class="muted">Include the CDN bundle, then grab the global <code>PerdanaDnD</code> and initialize <code>single</code> or <code>multiple</code>.</p>
           <pre><code class="language-html">&lt;script src="https://cdn.jsdelivr.net/gh/agungpg/Perdana-Drag-n-Drop/dist/bundle.js"&gt;&lt;/script&gt;
 &lt;script&gt;
   const { single, multiple } = window.PerdanaDnD;
+  single.init({ id: "container", width: "320px", height: "640px", gap: 12, data: [] });
+  // multiple.init({ id: "container", gap: 12, multipleData: [...] });
 &lt;/script&gt;</code></pre>
-          <p class="muted">Include the bundle, then call <code>single.init</code> or <code>multiple.init</code> with your config.</p>
+          <p class="muted">No npm required: load the script, then pass your config to the desired initializer.</p>
         </div>
       </div>
     </section>

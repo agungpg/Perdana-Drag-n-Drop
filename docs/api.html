@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perdana Drag-n-Drop | API</title>
+  <link
+    id="hljs-theme"
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"
+    integrity="sha512-yOANMRHkRkNvztNFVQVw1Gc7YCOUMIqFZ3VAb9YSEuxsjjlHzvEihQ/HVbUaz2QmiVjCwXTlzAIXazhbugzuZg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #0b1225;
+      --card: #121b32;
+      --accent: #7dd3fc;
+      --accent-2: #a855f7;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #1e293b;
+      --shadow: 0 10px 40px rgba(0,0,0,0.35);
+      --radius: 12px;
+      --code-bg: #0c1428;
+      --code-text: #e2e8f0;
+      --code-border: #1f2b46;
+      --code-kw: #c084fc;
+      --code-fn: #38bdf8;
+      --code-str: #bef264;
+      --code-comment: #94a3b8;
+      --code-num: #f97316;
+      --code-tag: #eab308;
+      --code-attr: #60a5fa;
+    }
+
+    body.theme-light {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --card: #f8fafc;
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #e2e8f0;
+      --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+      --code-bg: #0f172a0d;
+      --code-text: #0f172a;
+      --code-border: #cbd5e1;
+      --code-kw: #7c3aed;
+      --code-fn: #2563eb;
+      --code-str: #15803d;
+      --code-comment: #64748b;
+      --code-num: #d97706;
+      --code-tag: #ea580c;
+      --code-attr: #0ea5e9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(125,211,252,0.08), transparent 35%),
+                  radial-gradient(circle at 80% 0%, rgba(168,85,247,0.08), transparent 30%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      padding: 44px 28px 20px;
+      text-align: center;
+    }
+    .header-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      margin-top: 18px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      letter-spacing: -0.02em;
+    }
+    p.lead {
+      margin: 0 auto;
+      max-width: 720px;
+      color: var(--muted);
+    }
+    nav {
+      margin: 24px auto 6px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    nav a {
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 999px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      transition: border-color 150ms ease, transform 150ms ease;
+    }
+    body.theme-light nav a {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.06);
+    }
+    nav a:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .theme-toggle {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(125,211,252,0.15), rgba(168,85,247,0.12));
+      color: var(--text);
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+      box-shadow: var(--shadow);
+    }
+    .theme-toggle:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+    }
+    .theme-toggle:active {
+      transform: translateY(0);
+    }
+    main {
+      max-width: 1260px;
+      margin: 28px auto 80px;
+      padding: 0 28px 56px;
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    section header {
+      text-align: left;
+      padding: 20px 20px 0;
+    }
+    section h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      color: var(--text);
+    }
+    .section-body {
+      padding: 6px 22px 24px;
+      display: grid;
+      gap: 18px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: var(--text);
+    }
+    ul, ol {
+      margin: 8px 0 0 18px;
+      color: var(--muted);
+    }
+    .card > ul,
+    .card > ol {
+      margin-top: 6px;
+      row-gap: 6px;
+      display: grid;
+      padding-left: 18px;
+    }
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: var(--code-text);
+      border: 1px solid var(--code-border);
+      font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    pre {
+      background: radial-gradient(circle at 20% 20%, rgba(125,211,252,0.08), transparent 45%), linear-gradient(135deg, var(--code-bg), rgba(255,255,255,0.05));
+      border: 1px solid var(--code-border);
+      border-left: 3px solid var(--accent);
+      border-radius: 12px;
+      padding: 18px 18px 16px;
+      overflow: auto;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--code-text);
+      margin: 14px 0 10px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+      position: relative;
+    }
+    body.theme-light pre {
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+    pre code {
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(125,211,252,0.14);
+      color: var(--accent);
+      font-size: 12px;
+      margin-right: 6px;
+      border: 1px solid rgba(125,211,252,0.35);
+    }
+    .muted {
+      color: var(--muted);
+      margin: 10px 0 0;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 720px) {
+      header { padding: 28px 18px 12px; }
+      h1 { font-size: 26px; }
+      nav { gap: 8px; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Perdana Drag-n-Drop API</h1>
+    <p class="lead">
+      Lightweight drag-and-drop for single lists and kanban-style multi-board layouts.
+      Works with plain DOM, ships defaults, and exposes callbacks so you can persist changes.
+    </p>
+    <div class="header-actions">
+      <nav>
+        <a href="#install">Install</a>
+        <a href="#bundle">Bundle & global</a>
+        <a href="#single">Single board API</a>
+        <a href="#multiple">Multiple board API</a>
+        <a href="#callbacks">Callbacks</a>
+        <a href="#styling">Styling hooks</a>
+        <a href="#lifecycle">Lifecycle</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">Switch to Light</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="install">
+      <header><h2>Install & build</h2></header>
+      <div class="section-body two-col">
+        <div class="card">
+          <h3>From source</h3>
+          <pre><code class="language-bash">npm install
+npm run build</code></pre>
+          <p class="muted">Build emits <code>dist/bundle.[hash].js</code> and regenerates <code>dist/example/index.html</code>.</p>
+        </div>
+        <div class="card">
+          <h3>Use in the browser</h3>
+          <pre><code class="language-html">&lt;script src="./bundle.[hash].js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const { single, multiple } = window.PerdanaDnD;
+&lt;/script&gt;</code></pre>
+          <p class="muted">Bundle registers a <code>PerdanaDnD</code> global with <code>single</code> and <code>multiple</code> namespaces.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="bundle">
+      <header><h2>Exports & globals</h2></header>
+      <div class="section-body two-col">
+        <div class="card">
+          <h3>Entries</h3>
+          <ul>
+            <li><code>PerdanaDnD.single.init(config)</code> &rarr; single-column list.</li>
+            <li><code>PerdanaDnD.multiple.init(config)</code> &rarr; multi-board kanban.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Config basics</h3>
+          <ul>
+            <li><code>id</code>: Container element id (required).</li>
+            <li><code>width</code> / <code>height</code>: CSS sizes (strings).</li>
+            <li><code>padding</code>: Inner padding in px.</li>
+            <li><code>gap</code>: Vertical gap between cards in px.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="single">
+      <header><h2>Single board API</h2></header>
+      <div class="section-body">
+        <div class="two-col">
+          <div class="card">
+            <h3>Initialize</h3>
+          <pre><code class="language-javascript">PerdanaDnD.single.init({
+  id: "container",
+  width: "320px",
+  height: "640px",
+  padding: 20,
+  gap: 12,
+  data: [
+    { id: "item-1", title: "Item 1", description: "Board 1 Item 1" },
+    { id: "item-2", title: "Item 2", description: "Board 1 Item 2" }
+  ],
+  onDragStart: (cardIndex) => console.log(cardIndex),
+  onDragEnd: (startIndex, endIndex, updated) => console.log(updated),
+});</code></pre>
+          </div>
+          <div class="card">
+            <h3>Options</h3>
+            <ul>
+              <li><code>data</code>: Array of cards <code>{ id, title, description }</code>.</li>
+              <li><code>onDragStart(cardIndex)</code>: Fired when drag starts.</li>
+              <li><code>onDragEnd(startIndex, endIndex, updatedData)</code>: Fired after drop.</li>
+            </ul>
+            <p class="muted">Cards are re-ordered in-place and re-rendered with maintained top positions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="multiple">
+      <header><h2>Multiple board API</h2></header>
+      <div class="section-body">
+        <div class="two-col">
+          <div class="card">
+            <h3>Initialize</h3>
+            <pre><code class="language-javascript">PerdanaDnD.multiple.init({
+  id: "container",
+  width: "100%",
+  height: "100%",
+  padding: 20,
+  gap: 12,
+  boarderStyles: { width: "300px", height: "600px", padding: 20, gap: 20 },
+  multipleData: [
+    { id: "board-1", data: [{ id: "item-1", title: "Item 1", description: "Board 1 Item 1" }] },
+    { id: "board-2", data: [{ id: "item-2", title: "Item 2", description: "Board 2 Item 1" }] }
+  ],
+  onDragStart: (boardIndex, cardIndex) => console.log(boardIndex, cardIndex),
+  onDragEnd: (startCardIndex, startBoardIndex, endCardIndex, endBoardIndex, data) =>
+    console.log(data),
+});</code></pre>
+          </div>
+          <div class="card">
+            <h3>Options</h3>
+            <ul>
+              <li><code>multipleData</code>: Array of boards <code>{ id, data: [...] }</code>.</li>
+              <li><code>boarderStyles</code>: Board CSS sizes <code>{ width, height, padding, gap }</code>.</li>
+              <li><code>onDragStart(boardIndex, cardIndex)</code>: Drag start hook.</li>
+              <li><code>onDragEnd(startCardIndex, startBoardIndex, endCardIndex, endBoardIndex, data)</code>: Drop hook.</li>
+            </ul>
+            <p class="muted">Supports reordering inside a board and moving cards across boards.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="callbacks">
+      <header><h2>Callback signatures</h2></header>
+      <div class="section-body grid-2">
+        <div class="card">
+          <h3><span class="pill">single</span>onDragStart</h3>
+          <p class="muted"><code>(cardIndex: number) =&gt; void</code></p>
+          <ul>
+            <li><code>cardIndex</code>: zero-based index of the card entering drag.</li>
+            <li>Use to mark the active item or stash the original order.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="pill">single</span>onDragEnd</h3>
+          <p class="muted"><code>(startIndex: number, endIndex: number, updated: array) =&gt; void</code></p>
+          <ul>
+            <li><code>startIndex</code>: where the card began.</li>
+            <li><code>endIndex</code>: where the card was dropped.</li>
+            <li><code>updated</code>: mutated data array in its new order.</li>
+            <li>Persist or re-render from <code>updated</code> to keep state in sync.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="pill">multiple</span>onDragStart</h3>
+          <p class="muted"><code>(boardIndex: number, cardIndex: number) =&gt; void</code></p>
+          <ul>
+            <li><code>boardIndex</code>: zero-based board index of the source.</li>
+            <li><code>cardIndex</code>: zero-based card index within that board.</li>
+            <li>Use to mark the origin board/card or block certain moves.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="pill">multiple</span>onDragEnd</h3>
+          <p class="muted"><code>(startCardIndex: number, startBoardIndex: number, endCardIndex: number, endBoardIndex: number, data: array) =&gt; void</code></p>
+          <ul>
+            <li><code>startCardIndex</code> / <code>startBoardIndex</code>: origin card position.</li>
+            <li><code>endCardIndex</code> / <code>endBoardIndex</code>: destination card slot and board.</li>
+            <li><code>data</code>: updated multi-board data after the move.</li>
+            <li>Persist <code>data</code> or re-render to reflect the drop result.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="styling">
+      <header><h2>Styling hooks</h2></header>
+      <div class="section-body two-col">
+        <div class="card">
+          <h3>Single board classes</h3>
+          <ul>
+            <li><code>.pg-board-container</code>: single-list root; set width/height/padding/background.</li>
+            <li><code>.pg-card</code>: single-list card base; control radius, shadow, colors.</li>
+            <li><code>.pg-card-active</code>: single card while dragging; adjust scale, shadow, cursor.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Multiple board classes</h3>
+          <ul>
+            <li><code>.m-pg-board-container</code>: multi-board root; manage grid/flex, gap, padding.</li>
+            <li><code>.m-pg-board</code>: individual board; set width/height/padding/radius/background.</li>
+            <li><code>.m-pg-card</code>: multi-board card base; tweak spacing, radius, color.</li>
+            <li><code>.m-pg-card-active</code>: multi card while dragging; elevate z-index/scale/shadow.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="lifecycle">
+      <header><h2>Lifecycle & tips</h2></header>
+      <div class="section-body two-col">
+        <div class="card">
+          <h3>State updates</h3>
+          <ul>
+            <li>Data arrays are mutated in-place during reorder.</li>
+            <li>Persist changes in your app in the <code>onDragEnd</code> callback.</li>
+            <li>Call <code>init</code> again if you replace the container contents.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Good defaults</h3>
+          <ul>
+            <li>Ensure each card has a stable <code>id</code>.</li>
+            <li>Set explicit <code>width</code>/<code>height</code> on containers and boards for predictable layout.</li>
+            <li>Keep <code>gap</code> consistent across cards; multi-board uses <code>boarderStyles.gap</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    (function () {
+      const THEME_KEY = "perdana-dnd-theme";
+      const HLJS_DARK =
+        "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css";
+      const HLJS_LIGHT =
+        "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
+      const themeLink = document.getElementById("hljs-theme");
+      const body = document.body;
+      const toggleBtn = document.getElementById("theme-toggle");
+
+      const stored = localStorage.getItem(THEME_KEY);
+      const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+      const initial = stored || (prefersLight ? "light" : "dark");
+
+      function applyTheme(theme) {
+        const isLight = theme === "light";
+        body.classList.toggle("theme-light", isLight);
+        toggleBtn.textContent = isLight ? "Switch to Dark" : "Switch to Light";
+        toggleBtn.setAttribute("aria-pressed", isLight ? "true" : "false");
+        localStorage.setItem(THEME_KEY, theme);
+        if (themeLink) {
+          themeLink.href = isLight ? HLJS_LIGHT : HLJS_DARK;
+        }
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        const next = body.classList.contains("theme-light") ? "dark" : "light";
+        applyTheme(next);
+      });
+
+      applyTheme(initial);
+    })();
+  </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.hljs) {
+        window.hljs.highlightAll();
+      }
+    });
+  </script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+    integrity="sha512-zlq+Z1urk3sAAgAsvz4IfW05Ys6VClCDYn8/EV3DGgWvOmq++jy5o+BSGIEzF0Ks/vnkK5IVbP2XZEBy+3wWJg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+    defer
+  ></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"
+    integrity="sha512-OHUypkfIkSX7FX+0X3+eiNYiC6K8bmwlnzEmM/INxkscfCiX2JT0RY9omLDqdO+PqfBEog40QFeqdpXDSeB2HQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+    defer
+  ></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"
+    integrity="sha512-L6yDt/Au01qrUBsZjzvTE40UyHdtghWMyKuYc56MLYWcA2bdb8O0lOCivJyELH7r5S8AlOlKxE+SpFaA0ZUKeg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+    defer
+  ></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"
+    integrity="sha512-Zc4HqP/qqDvQ4Fyj30l1X788nR3M7PKXVAWQFZetufqEKwJVkJdY8SdP0GUoES/AE0sYO6mibEUgtqY+z9JGeQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+    defer
+  ></script>
+</body>
+</html>

@@ -12,19 +12,29 @@
     background-color: #fff;
     width: calc(100% - 64px);
     height: 90px;
-    cursor: pointer;
+    cursor: grab;
     position: absolute;
-    transition: all 0.1s linear;
+    transition: top 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+      transform 0.14s ease,
+      box-shadow 0.14s ease;
 
   }
   .pg-board-container > .pg-card.pg-card-active {
     box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
     z-index: 99;
     transform: scale(1.05);
+    cursor: grabbing;
+    transition: transform 0.14s ease, box-shadow 0.14s ease;
   }
   .pg-card-title {
     font-size: 1.125rem;
     font-weight: 600;
     margin: 0;
     padding: 0;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
   }

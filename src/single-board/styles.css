@@ -14,7 +14,9 @@
     height: 90px;
     cursor: grab;
     position: absolute;
-    transition: all 0.1s linear;
+    transition: top 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+      transform 0.14s ease,
+      box-shadow 0.14s ease;
 
   }
   .pg-board-container > .pg-card.pg-card-active {
@@ -22,6 +24,7 @@
     z-index: 99;
     transform: scale(1.05);
     cursor: grabbing;
+    transition: transform 0.14s ease, box-shadow 0.14s ease;
   }
   .pg-card-title {
     font-size: 1.125rem;
